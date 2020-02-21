@@ -4,6 +4,7 @@
 
   Added my rogomatic archives.
   Added my rogue archives.
+  Added my debug archives.
 
 
-Fri 21 Feb 2020 11:25:34 AM EST
+Fri 21 Feb 2020 11:29:13 AM EST
