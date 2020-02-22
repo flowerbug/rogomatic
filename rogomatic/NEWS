@@ -1,0 +1,365 @@
+Fri Mar 23 09:57:39 EDT 2018
+
+
+most recent changes:
+
+  - see ChangeLog for details.
+
+    increase the morecount because it really isn't a fatal
+    error if the hero gets repeatedly frozen.
+
+
+-----
+
+bugs:
+
+  - see TODO for things not fixed yet by this version and other 
+    issues, wishlist or help items.  more is written on bugs below 
+    (general approach and what i prioritize).
+
+
+-----
+
+project info:
+
+  - rogomatic is a unix curses program written mostly in C 
+    that automatically tries to play another unix curses game 
+    called rogue (also mostly written in C).  curses is a 
+    toolbox for handling character graphics in a simple text 
+    terminal screen (emulating a vt100).  rogue is a game of 
+    a dungeon explorer looking for the amulet of yendor.
+
+  - many years ago (the mid 1980s) i enjoyed playing rogue and 
+    always wanted to see Rog-O-Matic run, but our site didn't 
+    allow it.  a while ago looking around i found old versions 
+    that would not compile or run on my Debian GNU-Linux 
+    system.  i then found a version that was more recent and 
+    that version is where this project started from.
+
+    still, the code is old, does some non-standard things 
+    (which i ignore for now).
+
+  - see below for bug fixing priority and philosophy...
+
+  - you can send bug reports and comments to me.  please read
+    the TODO in the latest version released for a list of known 
+    issues so you don't waste time sending me a note about 
+    something i already have listed.
+
+  - i would appreciate help and there should now be items in 
+    the TODO list marked help so if you find something in there 
+    to work on let me know.
+
+  - if i've made errors or introduced other bugs, that's the 
+    breaks.  :)  have fun.  you have the source...
+
+
+-----
+
+install:
+
+  1. set up a directory where you want to put rogomatic
+  2. cd newdir
+  3. untar/unpack downloaded source code
+  4. cd into new directory
+  5. ./configure
+  6. make
+  7. su root
+  8. make installdirs
+  9. make install
+
+  - installdirs will check if /usr/local/bin and
+    /var/games/rogomatic exist, if not they will
+    be created for you.  installdirs is a part of
+    Makefile.am, so you can change it to suit your
+    setup, but make sure that install.h.in matches
+    whatever you wish too.
+
+  - programs and scripts should end up in 
+    /usr/local/bin by default.  i have src/install.h.in
+    set up to find binaries there (for the below version 
+    of rogue too).  if they are not installed there then 
+    they can be in /usr/games and if not there then they 
+    must be in the current directory.
+
+  - data files and lock files should end up in 
+    /var/games/rogomatic.  permission should be 
+    read/writeable to group games.  the user should 
+    also be in group games.
+
+  - check permissions on /usr/local/bin and /var/games/rogomatic
+    to make sure they conform to whatever policy or desires you
+    may have.
+
+  - i am currently using a version of rogue (5.4.4) 
+    distributed with this version of rogomatic and it is
+    being debugged (see the downloads list for the most 
+    recent version i have posted).  the best results will 
+    be from running that version of rogue since i haven't 
+    tested this updated rogomatic much against any other 
+    versions.  see the README in the rogue LATEST archive 
+    for how to install.  it places binaries in 
+    /usr/local/bin too by default.
+
+  - i have not tested this on a multiuser system, 
+    permissions might need to be adjusted.
+
+  - to redo the autotools (assuming you have them installed) 
+    if new versions come out, be prepared for this to break 
+    something:
+
+    1. make maintainer-clean
+    2. ./bootstrap
+    3. ./configure, etc...
+
+     maintainer-clean should not normally be needed if after 
+   this ./bootstrap or ./configure do not work the simplest 
+   fix is to go back to unpacking the source and use that 
+   version instead by skipping ./bootstrap and running 
+   .configure, this way at least you know that will work.
+
+  - if rogomatic doesn't run it is likely that you have 
+    something in a different place than expected or the user
+    does not have the right permissions or the group member-
+    ships are not correct (user should be in group games and
+    staff).
+
+  - if rogomatic takes a long time to start it is probably 
+    looking for the /var/games/rogomatic directory.  eventually,
+    it should quit and give an error message about not being 
+    able to open a file for the GenePool(rogue-version).  create
+    the directory using the above directions.
+
+  - debuglog.frogue, debuglog.player and roguelog can all 
+    contain useful information for debugging if rogomatic 
+    crashes or gives error messages.  also in 
+    /var/games/rogomatic/error(rogue-version) might be useful 
+    information about errors encountered.
+
+
+-----
+
+genes, long term memory and replicable runs:
+
+  at first there are no gene or long term memory files for
+rogomatic.  the first run will create them and then the 
+next runs will add to or change them.  they are created
+in the /var/games/rogomatic directory and are called:
+GeneLog544, GenePool544, ltm544, and rgmdelta5.4.4
+the first two are the gene related files and the last
+two are the long term memory files.
+
+  to start from scratch (before running rogomatic the
+first time) the following will set up two files:
+GeneLog544 and GenePool544
+
+  # to create 20 genes
+  $ gene -i -m20 -v544
+
+  there will not be ltm544 or rgmdelta5.4.4 files until 
+after you run rogomatic.  you can edit these files to
+be zeroed out (because the first run will put some 
+information in them).  or as a part of the debugging
+scripts in the directory static/fixed.orig i have all
+four files in an initial state.
+
+  once you have those four initial files set up (before
+you run rogomatic) and the seed you can then replicate the
+run by copying the four files back to /var/games/rogomatic
+set the SEED environment variable and then run rogomatic.
+
+  to get the next SEED in sequence you leave the finished
+version of the four files in /var/games/rogomatic and use them 
+plus the next SEED number.
+
+  oh, and of course, if later on you want to replicate a run
+you will need copies of the various binaries (rogomatic, rogue, 
+player, gene, etc.).  this is a good idea in general for 
+testing because as new versions of the compiler come out it
+can change code generation and it is much easier to keep
+track of instead of trying to keep track of all the various
+libraries and compiler versions.  as of yet i have not 
+discovered any strange happenings which come about due to a
+compiler issue.
+
+
+-----
+
+vt100:
+
+  - the current rogue/rogomatic code has an intermittent 
+    bug which is related to scrolling, but i have not found 
+    the fix for it yet.  i have worked around it by making a 
+    terminfo vt100 that does not use the related ncurses scroll 
+    related code.  this is distributed with the source code as 
+    vt100 and can be installed in the home directory of the 
+    person running rogue and rogomatic (put it in 
+    .terminfo/v/vt100) and make sure the TERM variable is set 
+    to vt100 in your shell/terminal.  the installation command:
+
+    $ make installdirs
+
+    will create the directory for you when it is run but it 
+    does not copy the file vt100 because that could affect other 
+    things -- i want the person doing the set up to do this 
+    knowingly...
+
+    depending upon where you unpack the source code the srcdir
+    will change:
+
+    $ cp srcdir/vt100 ~/.terminfo/v
+
+
+    it is a one line edit made to the existing .terminfo/v/vt100
+    which is described in the debug scripts file vt100/NOTES, but
+    i will include a chunk of that here because i may not put 
+    another version of the debug scripts out for a while...
+
+
+# You should not need to do the following, but I document it here 
+# just in case I forget how I did this...  :)
+#
+#
+# the vt100 file was produced by the commands:
+#
+
+$ infocmp -T -1 -r > vt100
+
+
+# editing the file vt100 to remove the following line for setting the
+# scroll regions:
+
+csr=\E[%i%p1%d;%p2%dr,
+
+
+# and then recompiling the vt100 to put it into your local
+# .terminfo/v/vt100 file
+#
+
+$ tic vt100
+
+
+# check to make sure things are set up ok...
+#
+
+#
+# are they generated?
+
+$ ls -l $(HOME).terminfo/v
+
+-rw------- 1 me me 1163 Dec  7 12:05 vt100
+lrwxrwxrwx 1 me me    5 Dec  7 12:05 vt100-am -> vt100
+
+
+# the users terminfo directories should be found before any of
+#    the other directories.
+#
+$ infocmp -D
+
+/home/me/.terminfo
+/etc/terminfo
+/lib/terminfo
+/usr/share/terminfo
+
+# yep...  looks good.
+
+
+-----
+
+more debugging information:
+
+  - the normal rogue/rogomatic screen is set for 24x80
+    characters.
+
+  - if you turn on debugging flags (via types.h or
+    interactively) you will need to make the window
+    bigger as more information is displayed below the
+    24th line.
+
+  - D_MESSAGE, D_PACK are both very helpful, increase
+    screen size to 33x80.  the rest are also helpful
+    if you are dealing with tracking down errors in 
+    other parts of rogomatic or rogue.
+
+  - there is a separate archive of the debugging
+    environment i've been using.  it contains scripts for 
+    replicating runs and comparing series of runs (with 
+    and without learning).  see the webpage:
+
+    http://www.anthive.com/project/rogue/
+
+    the scripts contain a README with details about how to 
+    run rogomatic in a loop using various settings.  mostly
+    aimed at allowing me to run things with specific sets 
+    of files and environment variables so that runs can be 
+    replicated.  some bugs are hard to duplicate and not 
+    frequent so when i have an example that illustrates the 
+    problem this is how i can recreate it and then work on 
+    understanding a suitable fix or workaround.
+
+
+-----
+
+priorities and philosophy:
+
+  - the general priority and philosophy of which bugs i
+    will fix is something like:
+
+    1st - segfaults other crashes, infinite loops
+    2nd - errors i cause trying to fix something else
+    3rd - issues i can find some way to work around
+    4th - problems found during testing
+
+    some issues or problems are related to how the 
+    program is constructed and are not easy at all to
+    figure out.  also, if during the fixing of some
+    issue i find that the overall ability of the player 
+    to find gold or progress in levels is seriously 
+    changed i will usually revert those changes and try 
+    another approach or leave the issue for the future
+    (the current set of weapon handling changes is 
+    likely to be revisited yet again as one example).
+
+    other issues are potentially related to the genetic
+    programming and learning code and should be avoided.
+    as i learn more about this code i think some of the
+    previous changes i've made (and others too) may not 
+    really be true to the overall desires and could 
+    possibly mask the decisions that the genetic 
+    programming could be making.  these types of things 
+    are beyond me at the moment, but in time i may learn 
+    more and figure them out.  or maybe someone else 
+    will...
+
+    i consider this entire project a learning ground for
+    many things including some techniques i've never had 
+    to use in programs or some of the tools (including 
+    automake, autoconf, etc.)  i enjoy it and i like the 
+    puzzle and problem solving aspects, but there are parts 
+    of this code which i do not understand at all yet and 
+    i'll admit it.  so if you see me mess something up, 
+    feel free to drop me a line and point it out.  
+    thanks.  :)
+
+  - the current list of issues or things to look into is
+    in the TODO file.
+
+
+-----
+
+compatibility:
+
+  - i'm currently running the Debian testing distribution and
+    on a 64 bit system.
+
+  - many compiler warning flags are being ignored so at 
+    some point those may cause problems, but i'm ignoring 
+    them too for now.
+
+  - i'm using fairly up to date versions of the autotools, 
+    compiler, make, etc. when they appear in the testing or
+    sometimes the unstable or experimental Debian archives.
+
+  - that all said, this code may work on older Debian
+    releases or even other distributions, but i haven't 
+    got the setups for testing them out.

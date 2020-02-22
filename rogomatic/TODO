@@ -1,0 +1,182 @@
+Fri Mar 23 10:04:01 EDT 2018
+
+
+===== rogomatic
+
+
+building:
+
+  - should compile and link
+
+  - i have a report for Lubuntu 14.0.1 32 Bit as able to 
+    compile and run.  thank you for the report!
+
+  - also have a report of rogomatic not working on a 64 bit 
+    system.  if you change your CFLAGS to include -m32 it 
+    will run.
+
+
+code changes/fixes summary:
+
+  - see the file ChangeLog.
+
+
+strange happenings and known bugs:
+
+  - when an item is known to be WORTHLESS it may be marked 
+    in the pack (inven[pos].traits) for a while, but the reset 
+    of the pack will clear this information and then the item 
+    may then no longer be seen as WORTHLESS until it gets used 
+    again and marked again.  this is seen most often with wands
+    that have run out of charges which should then be discarded
+    or destroyed but are held onto...)  [this issue is related 
+    overall to the general problem of clearing the pack of 
+    information when it really shouldn't be, a more intelligent 
+    and comparative approach would solve this sort of problem, 
+    but needs some thought, implementation and testing...]
+
+  - doesn't find some passageways when searching and that 
+    ends up wasting a lot of time or causing starvation.  some 
+    searches find a new square but it looks like the player 
+    doesn't notice it (not made a new goal to explore?...  dunno 
+    why).
+
+  - when teleported by a trap or by reading a scroll the hero may 
+    land on an item in older versions of rogue (before version 
+    r1.1.2).  rogomatic may not know it is on an item and try to 
+    drop something.  which can cause a more loop exit error.  
+    rogue version r1.1.2 or later contains a check to make sure a 
+    teleported hero lands on a empty square.
+
+    and
+
+  - the more loop exit may not actually exit all the time.  not 
+    sure why, but it might be related to the commented out code 
+    for signals (see wish list item below).
+
+  - the scroll related error that used to show up is back, but i've 
+    worked around it for now by using a slightly modified vt100 
+    terminfo.  see NEWS for details on the workaround if you want to 
+    use it.  figure this out in detail (very low priority as long as 
+    the work around keeps working and doesn't introduce new bugs or
+    other issues).
+
+  - i've seen the search count go negative at times and have yet to 
+    look into why.
+
+  - look into weapon handling again.  the problem is with unknown 
+    weapons that turn out to be cursed.  currently, i work around 
+    this by generating a "w" immediately followed by an ESC when 
+    an item _might_ be cursed.  this should then give an indication 
+    because a cursed weapon will always cause "you can't*it appears 
+    to be cursed..." type message.
+
+    the correct approach is to consider all "w" commands as multiple 
+    step.  [this applies more broadly to not only weapon use, but all 
+    items that might be cursed]  
+
+    unfortunately, the initial design is wrong and used in many 
+    places which makes this type of change very difficult.
+
+    the easier and less disruptive set of changes would be to put a 
+    top level check of the weapons/etc status in place in strategize() 
+    and to use that to make sure that unknown weapons/etc are figured 
+    out if they are important enough to be useful (preferably before 
+    finding the hero in a battle where such information would be really 
+    good to know).
+
+
+completely new areas of coding:
+
+  - some scrolls, potions, wands/staffs, rings, etc are not used 
+    or any information they might provide is looking like it is 
+    ignored.
+
+  - goals could be stacked and popped or interrupted and subgoals 
+    established.
+
+  - searching looks like it completely misses some rooms or areas 
+    and perhaps another method could be used after the others have
+    failed.
+
+  - making more genes and incorporating them into the player.
+
+  - detecting cycles of commands so that searching can be more 
+    efficient (tradeoff likely).
+
+
+wishlist items and help me out things:
+
+  - do the same sort of thing for armor handling that i did 
+    for weapon handling (actually, this is now in question as 
+    i keep finding things that aren't quite right with weapon 
+    handling so don't wish to duplicate it until it gets fixed 
+    -- see above discussion because i won't do anything for 
+    changing armor stuff until i'm happy with weapon handling).
+
+  - fix configure/automake stuff to work with ncurses debugging 
+    includes and libraries
+
+    - go through and make sure what is there is correct and 
+      useful (get rid of old stuff which may no longer apply).
+
+  - find a better home for this code than my machine.  must 
+    be free and useable by me.
+
+  - get 64 bit issues sorted out.  needs code review and fixes.
+
+  - some of the code has been commented out dealing with signals, 
+    i don't think i'll look at it anytime soon, but if you can sort 
+    it out that would be great.  some alternatives are suggested in
+    the man pages, but i've not studied or tested things by using 
+    them yet.
+
+  - some of the other programs i've actually never tried or know 
+    what they do.
+
+  - are the docs generated going to the right place in the man 
+    pages?  are they still accurate?
+
+  - license verification and documenting it.
+
+  - see next section (ask me if i'm working on something before 
+    putting time into it as i'd rather you work on something i'm 
+    not...  :) )
+
+
+screen not updating correctly:
+
+  (may not happen any longer?)
+  the internal representation of the screen is correct so these are 
+what seems to be cosmetic flaws.
+
+  - leftover '.', '@' and other characters in dark rooms
+
+  - passages are sometimes blank instead of '#'
+
+  - monster letters don't get removed
+
+  - #'s get put to the left of where they belong
+
+
+rogue and rog-o-matic other versions (someday maybe):
+
+  - test against different versions of rogue other than my 5.4.4. 
+    altered version.
+
+    - yes, finally did some of this and it looks like making 
+      changes for the bsdgames-nonfree version of rogue would be 
+      too large.  i'm going to skip this, i'd rather work on 
+      other things.
+
+    - the rogue fork versions at coredumpcentral.org seem to 
+      actually work somewhat, but i don't think any of them get 
+      very far...  i'll skip this too.  some day perhaps i'll 
+      get back to it.
+
+
+bug reports, fixes, questions:
+
+  ant at anthive dot com
+
+

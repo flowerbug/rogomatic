@@ -1,0 +1,317 @@
+Fri Mar 23 10:09:51 EDT 2018
+
+
+    [r2.0.3]
+
+  - mess.c, increase morecount.  it's not really a fatal error
+    worthy event to be repeatedly frozen.
+
+  - add to other docs to include -m32 in CFLAGS and change link
+    for website page.
+
+
+Sun Jan  4 14:54:17 EST 2015
+
+
+    [r2.0.2]
+
+  - command.c, command() removed MAXSAMECOM, comcount, lastcom 
+    and the comparisons needed -- the game and debugging are now 
+    to the point where having a check/limit like this is costing 
+    more than it is worth.  morecount remains...
+
+  - io.c, clearscreen() previously only reset the flag STUFF which
+    is not always the only flag used or needed even when a level 
+    changes.  i'm sure this sort of thing could influence many
+    other things like room searching.  now the entire set of flags
+    are cleared (the global constant SCRMINIT is for that).
+
+  - mess.c, parsemsg() added more cases for scare monster scrolls
+    along with a minor change for wands.
+
+  - rooms.c, newlevel() added a few things to make sure something is
+    not left dangling between levels or old commands are still in the
+    queue.
+
+  - strategy.c, tomonster() and tostuff(), to improve scare monster
+    scroll use (so hero doesn't starve when standing on one) but also
+    many changes to avoid using WORTHLESS staffs/wands.  which really
+    don't do all that is needed because of other errors in the code
+    which remove this helpful information during a pack/inventory
+    reset, but at least now the code should prevent repeat forever
+    loops that were happening before (see NEWS for why a different
+    kind of fix would be needed to not erase such useful info).
+
+    also, previously monsters were assumed awake/alert and sometimes 
+    they are not, add a little more code for that.
+
+  - pack.c, inventory() in some instances an item can become KNOWN by
+    using it and that event may not give a specific message from rogue.
+    now item messages for wands/staffs that are flagged as KNOWN get
+    checked to make sure they are all up to date with the correct 
+    information in the database.  other items may eventually need a
+    similar check, but for now only wands/staffs get this double check
+    (i don't want to slow the game down if i don't have to).
+
+  - types.h, MAXSTUFF limit increased, at the end of a game in a room 
+    with a lot of items this limit could be overrun because the scan
+    considers some tombstone characters as items in the game.  removed 
+    MAXSAMECOM.  added SCRMINIT.
+
+
+Thu Dec 18 10:53:21 EST 2014
+
+
+    [r2.0.1]
+
+  - Makefile.am, added a bit to installdirs to set up .terminfo/v
+    in users home directory if it isn't already there.  this is
+    optional (if the user wants to work around the vt100 scroll 
+    related bug).
+
+  - vt100, .terminfo/v/vt100 compiled entry to replace the default
+    vt100 you may be using if you want to work around the scroll
+    related bug that happens once in a great while.  see NEWS for
+    details and how to install it after running make installdirs.
+    this is optional (if the user wants to work around the vt100
+    scroll related bug).
+
+  - mess.c, bumped up morecount by 50.
+
+  - search.c, followmap() the followmap direction invalid bug was 
+    worked around by simply checking the value to make sure it 
+    was in the correct range, and if it wasn't to adjust it so 
+    that it was.  this was much easier to do than to figure out
+    why the value was out of range to begin with.  [when i get
+    into the search function code again i may figure it out 
+    later -- we'll see...]  if the value is negative or not
+    adjusted the first time around then we'll get an error
+    message.
+
+  - main.c, main(), sometimes runs were finishing so fast it would
+    hang up the debugging scripts.  added a bit of code to give me
+    the players process id in a file name so that i can now just
+    look for that.  makes testing go much faster.
+
+
+    [r2.0.0]  <--  version 2 at last!
+
+  welcome to the latest version that i've been working on
+for the past few months.  many changes here detailed below...
+some of these changes are possibly temporary or may need 
+further adjustment as i continue testing.  the good news is
+that all these changes fixed the following long standing bugs
+that i've wanted to tackle (i hope :)):
+
+  1. incorrect inferences
+  2. repeated display of certain items
+  3. identified items not in the database correctly
+  4. golden and silvery in rogue were reverted back
+     to gold and silver now that the database keeps 
+     track of what type of item.  we can now have a 
+     silver potion and a silver wand and rogomatic 
+     won't be confused.
+
+  and others...  pretty much the entire database code
+was gone through and either revised or made sure it
+worked how i expected it.  also, the database itself
+was revised to keep track of all interesting items and
+not just those items used.  this may have implications
+for other bits of code that i've not exercised yet.
+
+  you are not getting untested code.  i've run a
+few thousand SEEDs and also stress tested this version
+of rogomatic by using a rigged version of rogue (to
+put down a lot of items and many cursed or tricky 
+things).  only one "Error" is being reported by these
+tests (so far :) ) (the below mentioned: Followmap: 
+direction invalid error bug).  this does not mean this
+program is perfect, far from it, but i'm gradually
+tracking down bugs which cause it to stop completely
+or to sit and spin until the hero starves or similar
+things like searching over and over again and not
+finding something that looks obvious to me.  some of
+these sorts of bugs take a great deal of time to 
+figure out so i may not get them all done at once.
+be patient or help out.
+
+  - globals.h, added pending_call_letter and pending_call_name[]
+		which made it possible to fix the bug that was happening when
+    there were things being identified.  *realname() was replaced
+    by *findentry_getrealname() and *findentry_getfakename() was
+    added.
+
+  - types.h, removed constant INVMAX (not used anywhere).
+
+  - command.c, fixed bug in displaying long commands (they
+    would wrap to the next line).
+
+  - database.c, added more info to the database array (type of
+    object, pack_index (thought i would use it, but ends up i
+    didn't but when dumping the table it's nice to have so 
+    left it in)), renamed things a bit.  now rogomatic will not
+    confuse gold/silver potions with gold/silver wands and it
+    will also not make incorrect inferences based upon a wrong
+    entry in the database.  so this fixes two outstanding bugs
+    that i've wanted to get done for a few years now.  :)
+
+    notes:  (about why some things may not appear to be working
+             right away...(but they are))
+
+      when dumping the dbase table it isn't a bug if the 
+    pack_index is missing or incorrect because they are not 
+    used for anything important.  only when the item is first 
+    added to the dbase is that index correct.  afterwards, as 
+    items get picked up, dropped, used, etc. it isn't worth it
+    to update the pack_index (because it wasn't being used for 
+    anything other than cosmetic when dumping the table).
+
+      because of how rogomatic handles items quaffed, zapped,
+    read, etc. (anything that ends up calling the function infer())
+    after they've been used (and the "Call it" comes back, but
+    gets cancelled) it may be the case that the dbase will know 
+    the name of the item, but rogue has been told to use the code
+    name (when the "Call it" gets cancelled).  so the next time
+    the item shows up in the game it will be known, but it will
+    show up with the code name, the next inventory reset will create
+    a deferred pending "Call it" to let rogue know we know the real 
+    name of the item.
+
+      i tried various approaches to this problem (and the related
+    problem of how to fix the identifying scroll reading bugs that 
+    were happening) for a few weeks, but ended up concluding that 
+    the least intrusive fix was to set it up so that it eventually
+    gets triggered at the top strategy level.  at least then it
+    does not interfere with other pending tasks.
+
+      also (yes, i know this is a lot of writing :) ), the dbase
+    now keeps track of every item of interest (scroll, potion,
+    ring, wand, staff), whereas before it only kept track of
+    items that were used.  which means a flag for being used
+    was added to the dbase itself and various functions adjusted
+    to work with that.  the dump of the dbase was also revised.
+
+  - main.c, new variables noted above for globals.h, while i was
+    making changes, i replaced the 64s with NAMSIZ so if i need
+    to adjust them again i can do it with one change instead of
+    having to play "hunt the string with this length" game again.
+
+  - mess.c, many many changes, mostly to infer() related things
+    because now that the dbase keeps track of what type of item
+    it is that information has to be passed through.  readident(),
+    infer() were revised.  some messages were also added or
+    altered to pick up the changes i made to rogue.
+
+  - pack.c, add all interesting items to the dbase.  later on
+    when an inventory reset happens we'll scan through the whole
+    pack again, so that is when we can pick up on items that
+    rogue still is using the code name for and we know the 
+    real name.  when that happens a deferred pending "Call it"
+    will be created and eventually strategize() will notice
+    that has happened and run it.
+
+  - rooms.c, lightroom() didn't know when a wand/staff became
+    WORTHLESS and would keep zapping...
+
+  - strategy.c, added function callitpending() to deal with items
+    that need to be renamed by rogue.  also many fixes to words
+    like "dont" a few typoes, etc.
+
+  - tactics.c, trywand() and readscroll() revised, other "dont"s
+    fixed.
+
+  - things.c, added function destroyjunk() (a version of dropjunk
+    from strategy.c), drop() was revised, but i think needs a lot
+    more reconsideration.  point() added a check for USELESS, 
+    unknown() removed the unused condition, haveuseless() revised
+    and may need rethinking too, we'll see how further testing goes...
+
+  - worth.c, useless() added a check for WORTHLESS.
+
+
+    [r1.0.9]
+  - command.c added more checks on wielding, so that if the
+    hero wanted to do a test wield (a 'w' immediately followed
+    by an ESC) that would not crash the player.
+
+  - also related to wielding, changes were made to mess.c, 
+    strategy.c and things.c hoping to finally fix this for
+    good.
+
+  - additional cosmetic changes to pack.c to shorten up the
+    description for dwait when D_PACK debugging is turned on.
+
+  - fixed up a few comments that were wrong (screen size should
+    be at least 31x80 when D_PACK is set) in mess.c and changed
+    a few messages to be consistent with the rest (they weren't
+    capitalized for some reason).
+
+  - bumped repeat limits up further in command.c.
+
+  - added global variable diddrop to keep the hero from
+    dropping something on top of something else.
+
+  - added MAXSAMECOM so that changing the repeat count is 
+    quicker.
+
+
+    [r1.0.8]
+  - command.c bumped up limits so that errors that were
+    previously considered fatal have enough time to finish.
+
+
+    [r1.0.7]
+  - changed configure.ac to fix configure error about
+    missing "missing" script.
+
+  - rooms.c currentrectangle was setting negative values
+    added checks to make sure that doesn't happen again.
+
+  - things.c wield weapon handling doesn't work quite right,
+    fixed bug in sendcnow, but then just commented the call
+    out for now as it wasn't doing what i expected.  will 
+    continue researching this for the next release.
+
+
+    [r1.0.6]
+  - io.c scrolling caused problems, one bug fixed, but another
+    still remains to be solved.
+
+  - rooms.c fixed a debugging use of (v,h) to now use directional
+    letters (u,d,l,r) instead, makes things a little clearer.
+
+  - explore.c fixed small bug in debugging info display during
+    monster avoiding.
+
+  - command.c bumped up limits for error reporting.
+
+  - got rid of deciphervt100.c and adjusted src/Makefile.am.
+
+
+    [r1.0.5]
+  - fixed my mistake in last change.  it would not have 
+    worked well.
+ 
+
+    [r1.0.4]
+  - working on fixing the "1y" direction infinite loop bug
+    (repeatedly tries to walk into a wall).  the quick
+    fix is in this version.  this way at least there won't 
+    be an infinite loop, instead rogomatic will give a 
+    fatal error message and then quit.  the actual figuring 
+    out of why and correcting it will take a different 
+    release (i'm looking into it now as i get time).
+
+
+    [r1.0.3]
+  - reformatted code.  enough reading of strange indents
+    already...  no other changes than reformatting.
+
+
+    [r1.0.2]
+  - wielding weapons can fail mid-weild causing troubles.
+    fixed so that there is more and better checking of
+    weapon traits -- this seems to eliminate several other
+    bugs/error messages that were happening.
+
+
