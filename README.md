@@ -13,4 +13,7 @@
   http://www.anthive.com/project/rogue/
 
 
-Sat 22 Feb 2020 05:41:45 PM EST
+  The NEWS file contains information about how to install and what is required to run this version of rogomatic and the version of rogue that I use for testing.
+
+
+Sun 25 May 2025 09:32:40 PM EST
