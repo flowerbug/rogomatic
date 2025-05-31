@@ -35,6 +35,9 @@
 # include <stdlib.h>
 # include <sys/types.h>
 # include <sys/stat.h>
+# include <unistd.h>
+# include <signal.h>
+
 # include "types.h"
 # include "globals.h"
 # include "install.h"
@@ -42,7 +45,11 @@
 # define LINESIZE	2048
 # define SCORE(s,p)     (atoi (s+p))
 
+/* static declarations */
+
 static char lokfil[100];
+
+static void intrupscore (int sig __attribute__ ((__unused__)));
 
 /*
  * add_score: Write a new score line out to the correct rogomatic score
@@ -51,9 +58,8 @@ static char lokfil[100];
  * score file and catching interrupts and things.
  */
 
-add_score (new_line, vers, ntrm)
-char *new_line, *vers;
-int ntrm;
+void
+add_score (char *new_line, char *vers, int ntrm)
 {
   int   wantscore = 1;
   char  ch;
@@ -103,12 +109,12 @@ int ntrm;
  * dumpscore: Print out the scoreboard.
  */
 
-dumpscore (vers)
-char *vers;
+void
+dumpscore (char *vers)
 {
   char  ch, scrfil[100], delfil[100], newfil[100], allfil[100], cmd[256];
   FILE *scoref, *deltaf;
-  int   oldmask, intrupscore ();
+  int   oldmask;
 
   sprintf (lokfil, "%s %s", LOCKFILE, vers);
   sprintf (scrfil, "%s/rgmscore%s", getRgmDir (), vers);
@@ -198,9 +204,9 @@ char *vers;
  * intrupscore: We have an interrupt, clean up and unlock the score file.
  */
 
-intrupscore ()
+static void
+intrupscore (int sig __attribute__ ((__unused__)))
 {
   unlock_file (lokfil);
   exit (1);
 }
-

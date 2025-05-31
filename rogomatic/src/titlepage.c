@@ -31,8 +31,11 @@
 
 # include <stdio.h>
 # include <curses.h>
+
 # include "types.h"
 # include "globals.h"
+
+/* static declarations */
 
 static char *titlepage[]= {
   /* The static part of the display */
@@ -78,6 +81,8 @@ static char *titlepage[]= {
   NULL
 };
 
+static void animate (char *movie[]);
+
 # define NEXTCHAR (*cbf?*cbf++:(cbf=1+ *movie++)[-1])
 
 /*
@@ -90,12 +95,12 @@ static char *titlepage[]= {
  * greater than 2400).
  */
 
-animate (movie)
-char *movie[];
+static void
+animate (char *movie[])
 {
   int baud;
-  register int r, c, count = 0, delaychars;
-  register char *cbf = "";
+  int r, c, count = 0, delaychars;
+  char *cbf = "";
 
   if (emacs || terse) return;		/* No screen ==> no movie */
 
@@ -142,13 +147,13 @@ char *movie[];
  * 'nohalf' is true if the user does not want to see a halftime show.
  */
 
-halftimeshow (level)
-int level;
+void
+halftimeshow (int level)
 {
   static int nextshow = 1;
 
   if (!nohalf && level >= nextshow) {
-    if (nextshow == 1) { 
+    if (nextshow == 1) {
       nextshow = 9999; animate (titlepage);
     }
   }

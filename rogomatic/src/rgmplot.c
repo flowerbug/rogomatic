@@ -31,21 +31,31 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <string.h>
+
+# include "types.h"
+
 # define WIDTH 50
 # define AVLEN 7
 # define SCALE(n) (((n)+100)/200)
 # define isdigit(c) ((c) >= '0' && (c) <= '9')
 
-char *month[] = {
+int cheat = 0;
+
+/* static declarations */
+
+static char *month[] = {
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
-int doavg = 0, cheat = 0, min = -1;
+static int doavg = 0;
+static int minscore = -1;
 
-main (argc, argv)
-int argc;
-char *argv[];
+static int getlin (char *s);
+static int getscore (int *mm, int *dd, int *yy, char *player, int *score, char *cheated);
+
+int
+main (int argc, char *argv[])
 {
   int mm, dd, yy, score = 0, lastday = -1, lastmon = -1, lastyy = -1, h;
   int sumscores = 0, numscores = 0, i;
@@ -67,13 +77,13 @@ char *argv[];
       }
     }
 
-  if (argc > 0) min = atoi (argv[0]);
+  if (argc > 0) minscore = atoi (argv[0]);
 
   /*  Print out the header */
   printf ("\t\t   Scatter Plot of Rog-O-Matic Scores versus time\n\n");
 
-  if (min > 0)
-    printf ("\t\t              Scores greater than %d\n\n", min);
+  if (minscore > 0)
+    printf ("\t\t              Scores greater than %d\n\n", minscore);
 
   printf ("\t\t0      2000      4000      6000      8000     10000\n");
   printf ("\t\t|----+----|----+----|----+----|----+----|----+----|\n");
@@ -148,8 +158,8 @@ char *argv[];
 }
 
 
-getlin (s)
-char *s;
+static int
+getlin (char *s)
 {
   int ch, i;
   static int endfile = 0;
@@ -170,9 +180,8 @@ char *s;
   return (i);
 }
 
-getscore (mm, dd, yy, player, score, cheated)
-int *mm, *dd, *yy, *score;
-char *player, *cheated;
+static int
+getscore (int *mm, int *dd, int *yy, char *player, int *score, char *cheated)
 {
   char line[128], reason[32];
 
@@ -180,7 +189,7 @@ char *player, *cheated;
     sscanf (line, "%d %d, %d %10s%d%c%17s",
             mm, dd, yy, player, score, cheated, reason);
 
-    if ((*score >= min || *score < 0) &&
+    if ((*score >= minscore || *score < 0) &&
         (*cheated != '*' || cheat) &&
         !stlmatch (reason, "saved") &&
         (*score > 2000 || !stlmatch (reason, "user")))

@@ -36,7 +36,7 @@ static const char *rgmpath  = "rlog";
 static const char *lockpath = "rlog/RgmLock";
 
 const char *
-getRgmDir ()
+getRgmDir (void)
 {
   DIR *rgmdir = NULL;
 
@@ -51,7 +51,7 @@ getRgmDir ()
 }
 
 const char *
-getLockFile ()
+getLockFile (void)
 {
   DIR *rgmdir = NULL;
 

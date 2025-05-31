@@ -29,10 +29,15 @@
 
 # include <stdio.h>
 # include <stdlib.h>
+
 # include "types.h"
 # include "install.h"
 
-int knob[MAXKNOB];
+char  genelog[100];             /* Genetic learning log file */
+char  genepool[100];            /* Gene pool */
+
+/* static declarations */
+static int knob[MAXKNOB];		/* Knobs */
 char *knob_name[MAXKNOB] = {
   "trap searching:   ",
   "door searching:   ",
@@ -44,13 +49,10 @@ char *knob_name[MAXKNOB] = {
   "hoarding food:    "
 };
 
-char genelock[100];
-char genelog[100];
-char genepool[100];
+static char  genelock[100];            /* Gene pool lock file */
 
-main (argc, argv)
-int   argc;
-char *argv[];
+int
+main (int argc, char *argv[])
 {
   int m=10, init=0, seed=0, version=RV53A, full=0;
 

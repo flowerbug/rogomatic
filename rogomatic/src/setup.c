@@ -31,6 +31,8 @@
 # include <stdlib.h>
 # include <signal.h>
 # include <unistd.h>
+
+# include "types.h"
 # include "install.h"
 
 # define READ    0
@@ -40,12 +42,15 @@
 
 # define ROGUETERM "rg|rterm:am:bs:ce=^[^S:cl=^L:cm=^[a%+ %+ :co#80:li#24:so=^[D:se=^[d:pt:ta=^I:up=^[;:db:xn:"
 
-int   frogue, trogue;
+/* static declarations */
 
-main (argc, argv)
-int   argc;
-char *argv[];
+static int   frogue, trogue;
 
+static void replaylog (char *fname, char *options);
+static int author (void);
+
+int
+main (int argc, char *argv[])
 {
   int   ptc[2], ctp[2];
   int   child, score = 0, oldgame = 0;
@@ -179,8 +184,8 @@ char *argv[];
  * given the fake value 'Z'.
  */
 
-replaylog (fname, options)
-char *fname, *options;
+static void
+replaylog (char *fname, char *options)
 {
   execl ("player", "player", "ZZ", "0", options, fname, 0);
 # ifdef PLAYER
@@ -195,7 +200,8 @@ char *fname, *options;
  *	See if a user is an author of the program
  */
 
-author()
+static int
+author (void)
 {
   switch (getuid()) {
     case 1337:	/* Fuzzy */

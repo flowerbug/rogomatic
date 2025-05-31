@@ -32,6 +32,8 @@
 # include <stdlib.h>
 # include <string.h>
 
+# include "types.h"
+
 # define SKIPARG	while (*++(*argv)); --(*argv)
 
 # define BWIDTH 200
@@ -42,14 +44,16 @@
 
 int cheat = 0;
 
-main (argc, argv)
-int argc;
-char *argv[];
+/* static declarations */
+static int getscore (int *score, char *killer, int *level);
+
+int
+main (int argc, char *argv[])
 {
-  int score = 0, maxfreq = 0, lowscore = 0, min = 200, killnum = 0;
+  int score = 0, maxfreq = 0, lowscore = 0, minscore = 200, killnum = 0;
   int bucket[NUMBUK], killed[NUMBUK][NOMON], level = 0, dolev = 0;
   int total[NOMON];
-  register int i, j, h, f;
+  int i, j, h, f;
   char killer[100], plot[128];
 
   /* Zero the buckets */
@@ -69,7 +73,7 @@ char *argv[];
       switch (**argv) {
         case 'c': cheat++; break; /* List cheat games */
         case 'l': dolev++; break; /* Plot level instead of score */
-        case 'a': min = atoi (*argv+1); SKIPARG; break;
+        case 'a': minscore = atoi (*argv+1); SKIPARG; break;
         default:  printf ("Usage: histplot [-cl] [-aNNNN]\n");
           exit (1);
       }
@@ -87,7 +91,7 @@ char *argv[];
 
   /* While more scores do action for each score */
   while (getscore (&score, killer, &level) != EOF) {
-    if (score < min) { lowscore++; continue; }
+    if (score < minscore) { lowscore++; continue; }
 
     if (dolev) { h = level; }
     else       { if ((h = BUCKET(score)) >= NUMBUK) h = NUMBUK-1; }
@@ -177,14 +181,13 @@ char *argv[];
     printf ("             $ Killed by user or error\n");
 
   if (lowscore)
-    printf ("      %8d scores below %d not printed.\n", lowscore, min);
+    printf ("      %8d scores below %d not printed.\n", lowscore, minscore);
 }
 
 # define LEVELPOS 47
 
-getscore (score, killer, level)
-int *score, *level;
-char *killer;
+static int
+getscore (int *score, char *killer, int *level)
 {
   int dd, yy;
   char line[128], mmstr[8], player[16], cheated=' ';
