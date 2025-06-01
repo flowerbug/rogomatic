@@ -29,8 +29,13 @@
  */
 
 # include <curses.h>
+
 # include "types.h"
 # include "globals.h"
+
+/* static declarations */
+static int hitbonus(int strength);
+static int damagebonus (int strength);
 
 /*
  * havearmor: Return Kth best armor. K should be in the range 1 to invcount.
@@ -41,9 +46,10 @@
 
 # define swap(x,y) {t=(x); (x)=(y); (y)=t;}
 
-int havearmor (k, print, rustproof)
+int
+havearmor (int k, int print, int rustproof)
 {
-  register int i, j, w, t, n=0;
+  int i, j, w, t, n=0;
   int armind[MAXINV], armval[MAXINV];
 
   /* Sort armor by armor class (best first) */
@@ -79,8 +85,8 @@ int havearmor (k, print, rustproof)
  * of remove curse and -2 for when we don't have a remove curse.
  */
 
-armorclass (i)
-int i;
+int
+armorclass (int i)
 {
   int class;
 
@@ -118,9 +124,10 @@ int i;
  *             then NONE is returned.
  */
 
-int haveweapon (k, print)
+int
+haveweapon (int k, int print)
 {
-  register int i, j, w, t, n=0;
+  int i, j, w, t, n=0;
   int weapind[MAXINV], weapval[MAXINV];
 
   for (i=0; i<invcount; ++i)
@@ -169,8 +176,8 @@ int haveweapon (k, print)
  *              high numbers.
  */
 
-weaponclass (i)
-int i;
+int
+weaponclass (int i)
 {
   int class, hitplus = 0, damplus = 0;
 
@@ -237,9 +244,10 @@ int i;
  *           then NONE is returned.
  */
 
-int havering (k, print)
+int
+havering (int k, int print)
 {
-  register int i, j, r, t, n=0;
+  int i, j, r, t, n=0;
   int ringind[MAXINV], ringval[MAXINV];
 
   for (i=0; i<invcount; ++i)
@@ -284,8 +292,8 @@ int havering (k, print)
  *            value of the ring.
  */
 
-ringclass (i)
-int i;
+int
+ringclass (int i)
 {
   int class = 0, magicplus = 0;
 
@@ -471,9 +479,10 @@ int i;
  *          then NONE is returned.
  */
 
-int havebow (k, print)
+int
+havebow (int k, int print)
 {
-  register int i, j, w, t, n=0;
+  int i, j, w, t, n=0;
   int bowind[MAXINV], bowval[MAXINV];
 
   for (i=0; i<invcount; ++i)
@@ -505,8 +514,8 @@ int havebow (k, print)
  *           hit, multiplied by 10.
  */
 
-bowclass (i)
-int i;
+int
+bowclass (int i)
 {
   int class, hitplus = 0, damplus = 0;
 
@@ -533,9 +542,10 @@ int i;
  * are cheating.  Consider arrows first if we are wielding our bow.
  */
 
-int havemissile ()
+int
+havemissile (void)
 {
-  register int i, fewest = 9999, obj = NONE;
+  int i, fewest = 9999, obj = NONE;
 
   if (wielding (thrower)) {	/* Wielding bow, use arrows */
     for (i=0; i<invcount; ++i)
@@ -569,7 +579,8 @@ int havemissile ()
  * havearrow: return the index of any arrow which has count 1.
  */
 
-havearrow ()
+int
+havearrow (void)
 {
   int arr;
 
@@ -586,8 +597,8 @@ havearrow ()
  * hitbonus: Return the bonus to hit.
  */
 
-hitbonus (strength)
-int strength;
+static int
+hitbonus(int strength)
 {
   int bonus = 0;
 
@@ -614,8 +625,8 @@ int strength;
  * damagebonus: bonus = the damage bonus.
  */
 
-damagebonus (strength)
-int strength;
+static int
+damagebonus (int strength)
 {
   int bonus = 0;
 
@@ -648,7 +659,8 @@ int strength;
  * setbonuses: Set global hit and damage pluses.
  */
 
-setbonuses ()
+void
+setbonuses(void)
 {
   /* Set global Hit bonus */
   gplushit = hitbonus (Str);

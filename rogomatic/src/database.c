@@ -30,13 +30,14 @@
  * Note: pack_index was first used to keep certain errors from happening.
  *       various fixes seem to have worked so it is no longer needed, but
  *       it is nice to have when dumping the table...  with that said,
- *       we do not bother to keep the pack_index reference back to the 
+ *       we do not bother to keep the pack_index reference back to the
  *       inventory accurate later on.  only new items get it set.
  *
  */
 
 # include <curses.h>
 # include <string.h>
+
 # include "types.h"
 # include "globals.h"
 
@@ -53,16 +54,19 @@ struct  {
 
 int datalen = 0;
 
+/* static declarations */
+static int findfake (char *string, stuff item_type);
+static char *realname (char *codename);
+
 /*
  * findfake: find the fakename database entry for 'string'
  *           and of item_type (both must match exactly).
  */
 
-findfake (string, item_type)
-char  *string;
-stuff item_type;
+static int
+findfake (char *string, stuff item_type)
 {
-  register int i;
+  int i;
 
   for (i = 0; i < datalen; i++)
     if (streq (dbase[i].fakename, string) &&
@@ -85,10 +89,10 @@ stuff item_type;
  * findentry: find the database entry for 'string'
  */
 
-findentry (string)
-char *string;
+int
+findentry (char *string)
 {
-  register int i;
+  int i;
 
   for (i = 0; i < datalen; i++)
     if (streq (dbase[i].fakename, string) ||
@@ -104,14 +108,13 @@ char *string;
  *     the realname.  returns pointer to the fakename or "".
  */
 
-char *findentry_getfakename (string, item_type)
-char  *string;
-stuff item_type;
+char *
+findentry_getfakename (char *string, stuff item_type)
 {
-  register int i;
+  int i;
 
   for (i = 0; i < datalen; i++)
-    if ((dbase[i].item_type == item_type) && 
+    if ((dbase[i].item_type == item_type) &&
        (streq (dbase[i].fakename, string) ||
         *dbase[i].realname && streq (dbase[i].realname, string)))
       return (dbase[i].fakename);
@@ -125,14 +128,13 @@ stuff item_type;
  *     the realname.  returns pointer to the realname or "".
  */
 
-char *findentry_getrealname (string, item_type)
-char  *string;
-stuff item_type;
+char *
+findentry_getrealname (char *string, stuff item_type)
 {
-  register int i;
+  int i;
 
   for (i = 0; i < datalen; i++)
-    if ((dbase[i].item_type == item_type) && 
+    if ((dbase[i].item_type == item_type) &&
        (streq (dbase[i].fakename, string) ||
         *dbase[i].realname && streq (dbase[i].realname, string)))
       return (dbase[i].realname);
@@ -144,10 +146,8 @@ stuff item_type;
  * addobj: Add item to dbase.
  */
 
-addobj (codename, pack_index, item_type)
-char  *codename;
-int   pack_index;
-stuff item_type;
+void
+addobj (char *codename, int pack_index, stuff item_type)
 {
   if (findfake (codename, item_type) == NOTFOUND) {
     dbase[datalen].pack_index = pack_index;
@@ -164,8 +164,8 @@ stuff item_type;
  *         object with name 'string'.
  */
 
-useobj (string)
-char *string;
+void
+useobj (char *string)
 {
   int i = findentry (string);
 
@@ -180,12 +180,10 @@ char *string;
  * light).
  */
 
-infername (codename, name, item_type)
-char  *codename;
-char  *name;
-stuff item_type;
+void
+infername (char *codename, char *name, stuff item_type)
 {
-  register int i;
+  int i;
 
   i = findfake (codename, item_type);
 
@@ -212,25 +210,25 @@ stuff item_type;
  * used: Return true if we have marked 'codename' as used.
  */
 
-int used (codename)
-char *codename;
+int
+used (char *codename)
 {
-  register int i;
+  int i;
 
   for (i = 0; i < datalen; i++)
     if (streq (dbase[i].fakename, codename))
       return (dbase[i].used);
-
+  return FALSE;
 }
 
 /*
  * know: Return true if we know what the fake name for 'name' is.
  */
 
-int know (name)
-char *name;
+int
+know (char *name)
 {
-  register int i;
+  int i;
 
   for (i = 0; i < datalen; i++)
     if (*dbase[i].realname && streq (dbase[i].realname, name))
@@ -243,10 +241,10 @@ char *name;
  * realname: Returns the real name of an object named 'codename'.
  */
 
-char *realname (codename)
-char *codename;
+static char *
+realname (char *codename)
 {
-  register int i;
+  int i;
 
   for (i = 0; i < datalen; i++)
     if (*dbase[i].realname && streq (dbase[i].fakename, codename))
@@ -259,14 +257,15 @@ char *codename;
  * dumpdatabase: Debugging, dump the database on the screen.
  */
 
-dumpdatabase ()
+void
+dumpdatabase (void)
 {
-  register int i;
+  int i;
 
   for (i = 0; i < datalen; i++) {
     at (i+1, 0);
-    printw ("%02d %c|%01d|%01d %-32s %02d '%s'", 
-      i, (dbase[i].pack_index != -1) ? LETTER(dbase[i].pack_index) : ' ', dbase[i].item_type, dbase[i].used, 
+    printw ("%02d %c|%01d|%01d %-32s %02d '%s'",
+      i, (dbase[i].pack_index != -1) ? LETTER(dbase[i].pack_index) : ' ', dbase[i].item_type, dbase[i].used,
       dbase[i].realname, i, dbase[i].fakename);
   }
 }

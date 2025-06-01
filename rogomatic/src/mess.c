@@ -30,13 +30,15 @@
 # include <curses.h>
 # include <ctype.h>
 # include <string.h>
+# include <stdlib.h>
+
 # include "types.h"
 # include "globals.h"
 
-extern int clearsendqueue ();
-
 /* Matching macros */
 # define MATCH(p) smatch(mess,p,result)
+
+/* static declarations */
 
 /* Local data recording statistics */
 static int monkilled[] = {
@@ -46,10 +48,10 @@ static int monkilled[] = {
 static int totalkilled=0, timeshit=0, timesmissed=0, hits=0, misses=0;
 static int sumgold=0, sumsqgold=0, numgold=0;
 
-static mhit=0, mmiss=0, mtarget= NONE;
+static int mhit=0, mmiss=0, mtarget= NONE;
 
 /* Other local data */
-int identifying = 0;		/* Next message is from identify scroll */
+static int identifying = 0;	/* Next message is from identify scroll */
 static int justreadid = 0;	/* True if just read identify scroll */
 static int gushed = 0;		/* True ==> water on the head msg recently */
 static int echoit;		/* True ==> echo this message to the user */
@@ -57,6 +59,20 @@ static int echoit;		/* True ==> echo this message to the user */
 /* Results from star matcher */
 static char res1[NAMSIZ], res2[NAMSIZ], res3[NAMSIZ], res4[NAMSIZ], res5[NAMSIZ];
 static char *result[] = { res1, res2, res3, res4, res5 };
+
+static void parsemsg (char *mess, char *mend);
+static int smatch (char *dat, char *pat, char **res);
+static void readident (char *name);
+static void rampage (void);
+static void curseditem (void);
+static void washit (char *monster);
+static void wasmissed (char *monster);
+static void didhit (void);
+static void didmiss (void);
+static void mshit (char *monster);
+static void msmiss (char *monster);
+static void countgold (char *amount);
+static int getmonhist (char *monster, int hitormiss);
 
 /*
  * terpmes: called when a message from Rogue is on the top line,
@@ -70,10 +86,11 @@ static char *result[] = { res1, res2, res3, res4, res5 };
  * multiple messages.
  */
 
-terpmes ()
+void
+terpmes (void)
 {
   char mess[128]; char topline[128];
-  register char *m, *mend, *s, *t;
+  char *m, *mend, *s, *t;
 
   s=&screen[0][0];
   memset (topline, '\0', 128);
@@ -153,8 +170,8 @@ terpmes ()
  * or call functions.
  */
 
-parsemsg (mess, mend)
-register char *mess, *mend;
+static void
+parsemsg (char *mess, char *mend)
 {
   int unknown = 0;
 
@@ -456,7 +473,7 @@ register char *mess, *mend;
         else if (MATCH("this potion tastes pretty*")) infer ("thirst quenching", potion);
         else if (MATCH("this potion tastes like * juice*"))
           { infer ("see invisible", potion); if (version == RV36A) sendnow ("%c", ESC); }
-        else if (MATCH("this scroll seems to be blank*")) infer ("blank paper");
+        else if (MATCH("this scroll seems to be blank*")) infer ("blank paper", Scroll);
         else if (MATCH("the * bounces*")) ;
         else if (MATCH("the * vanishes as it hits the ground*"))
           { darkturns = 0; darkdir = NONE; targetmonster = 0; echoit=0; }
@@ -705,37 +722,37 @@ register char *mess, *mend;
  * characters matched by the 'i'th *.
  */
 
-smatch (dat, pat, res)
-register char *dat, *pat, **res;
+static int
+smatch (char *dat, char *pat, char **res)
 {
-  register char *star = 0, *starend, *resp;
+  char *star = 0, *starend, *resp;
   int nres = 0;
 
   while (1) {
     if (*pat == '*') {
-      star = ++pat; 			     /* Pattern after * */
-      starend = dat; 			     /* Data after * match */
-      resp = res[nres++]; 		     /* Result string */
-      *resp = '\0'; 			     /* Initially null */
+      star = ++pat;			     /* Pattern after * */
+      starend = dat;			     /* Data after * match */
+      resp = res[nres++];		     /* Result string */
+      *resp = '\0';			     /* Initially null */
     }
-    else if (*dat == *pat) {	     /* Characters match */
-      if (*pat == '\0') 		     /* Pattern matches */
+    else if (*dat == *pat) {		     /* Characters match */
+      if (*pat == '\0')			     /* Pattern matches */
         return (1);
 
-      pat++; 				     /* Try next position */
+      pat++;				     /* Try next position */
       dat++;
     }
     else {
-      if (*dat == '\0') 		     /* Pattern fails - no more */
-        return (0); 			     /* data */
+      if (*dat == '\0')			     /* Pattern fails - no more */
+        return (0);			     /* data */
 
-      if (star == 0) 			     /* Pattern fails - no * to */
-        return (0); 			     /* adjust */
+      if (star == 0)			     /* Pattern fails - no * to */
+        return (0);			     /* adjust */
 
-      pat = star; 			     /* Restart pattern after * */
-      *resp++ = *starend; 		     /* Copy character to result */
-      *resp = '\0'; 			     /* null terminate */
-      dat = ++starend; 			     /* Rescan after copied char */
+      pat = star;			     /* Restart pattern after * */
+      *resp++ = *starend;		     /* Copy character to result */
+      *resp = '\0';			     /* null terminate */
+      dat = ++starend;			     /* Rescan after copied char */
     }
   }
 }
@@ -744,8 +761,8 @@ register char *dat, *pat, **res;
  * readident: we have read an identify scroll.
  */
 
-readident (name)
-char *name;
+static void
+readident (char *name)
 {
   int obj; char id = '*';	/* Default is "* for list" */
   stuff item_type = none;
@@ -845,12 +862,13 @@ char *name;
  * rampage: read a scroll of genocide.
  */
 
-rampage ()
+static void
+rampage (void)
 {
   char monc;
 
   /* Check the next monster in the list, we may not fear him */
-  while (monc = *genocide) {
+  while ((monc = *genocide)) {
     /* Do not waste genocide on stalkers if we have the right ring */
     if ((streq (monname (monc), "invisible stalker") ||
          streq (monname (monc), "phantom")) &&
@@ -889,7 +907,8 @@ rampage ()
  * Good rings we have identified, so don't bother marking rings.
  */
 
-curseditem ()
+static void
+curseditem (void)
 {
   usesynch = 0;    /* Force a reset inventory */
 
@@ -921,16 +940,15 @@ curseditem ()
  * base, and then zap that name into all of the same objects
  */
 
-infer (objname, item_type)
-char *objname;
-stuff item_type;
+void
+infer (char *objname, stuff item_type)
 {
-  register int i;
+  int i;
 
   if (*lastname && *objname && !stlmatch (objname, lastname)) {
     infername (lastname, objname, item_type);
     for (i=0; i<MAXINV; i++) {
-      if ((inven[i].count > 0) && 
+      if ((inven[i].count > 0) &&
            streq (inven[i].str, lastname) && inven[i].type == item_type) {
         memset (inven[i].str, '\0', NAMSIZ);
         strncpy (inven[i].str, objname, NAMSIZ-1);
@@ -944,10 +962,10 @@ stuff item_type;
  * Killed: called whenever we defeat a monster.
  */
 
-killed (monster)
-register char *monster;
+void
+killed (char *monster)
 {
-  register int m = 0, mh = 0;
+  int m = 0, mh = 0;
 
   /* Find out what we really killed */
   if (!cosmic && !blinded && targetmonster>0 && streq (monster, "it"))
@@ -1001,10 +1019,10 @@ register char *monster;
  * washit: Record being hit by a monster.
  */
 
-washit (monster)
-char *monster;
+static void
+washit (char *monster)
 {
-  register int mh = 0, m = 0;
+  int mh = 0, m = 0;
 
   /* Find out what really hit us */
   if ((mh = getmonhist (monster, 1)) != NONE)
@@ -1030,10 +1048,10 @@ char *monster;
  * wasmissed: Record being missed by a monster.
  */
 
-wasmissed (monster)
-char *monster;
+static void
+wasmissed (char *monster)
 {
-  register int mh = 0, m = 0;
+  int mh = 0, m = 0;
 
   /* Find out what really missed us */
   if ((mh = getmonhist (monster, 1)) != NONE)
@@ -1056,9 +1074,10 @@ char *monster;
  * didhit: Record hitting a monster.
  */
 
-didhit ()
+static void
+didhit (void)
 {
-  register int m = 0;
+  int m = 0;
 
   /* Record our hit */
   if (!cosmic) m = lastmonster;
@@ -1074,9 +1093,10 @@ didhit ()
  * didmiss: Record missing a monster.
  */
 
-didmiss ()
+static void
+didmiss (void)
 {
-  register int m = 0;
+  int m = 0;
 
   /* Record our miss */
   if (!cosmic) m = lastmonster;
@@ -1092,10 +1112,10 @@ didmiss ()
  * mshit: Record hitting a monster with a missile.
  */
 
-mshit (monster)
-char *monster;
+static void
+mshit (char *monster)
 {
-  register int mh;
+  int mh;
 
   /* Arching in a dark room? */
   if (!cosmic && !blinded && targetmonster > 0 && streq (monster, "it"))
@@ -1116,10 +1136,10 @@ char *monster;
  * msmiss: Record missing a monster with a missile.
  */
 
-msmiss (monster)
-char *monster;
+static void
+msmiss (char *monster)
 {
-  register int mh;
+  int mh;
 
   /* Arching in a dark room? */
   if (!cosmic && !blinded && targetmonster > 0 && streq (monster, "it"))
@@ -1142,8 +1162,8 @@ char *monster;
  *            statistics about the amount of gold picked up.
  */
 
-countgold (amount)
-register char *amount;
+static void
+countgold (char *amount)
 {
   int pot;
 
@@ -1155,12 +1175,11 @@ register char *amount;
  * Summary: print a summary of the game.
  */
 
-summary (f, sep)
-FILE *f;
-char sep;
+void
+summary (FILE *f, char sep)
 {
-  register int m;
-  char s[1024], *monname ();
+  int m;
+  char s[1024];
 
   sprintf (s, "Monsters killed:%c%c", sep, sep);
 
@@ -1190,7 +1209,8 @@ char sep;
  * versiondep: Set version dependent variables.
  */
 
-versiondep ()
+void
+versiondep (void)
 {
   if (version >= RV53A)		genocide = "DMJGU";
   else if (version >= RV52A)	genocide = "UDVPX";
@@ -1205,9 +1225,8 @@ versiondep ()
  * when we are being stalked by an invisible monster.
  */
 
-getmonhist (monster, hitormiss)
-char *monster;
-int hitormiss;
+static int
+getmonhist (char *monster, int hitormiss)
 {
   if (cosmic || blinded)
     { return (findmonster ("it")); }

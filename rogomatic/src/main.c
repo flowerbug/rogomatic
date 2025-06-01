@@ -102,9 +102,10 @@
 # include <stdlib.h>
 # include <sys/types.h>
 # include <unistd.h>
+
 # include "types.h"
-# include "termtokens.h"
 # include "install.h"
+# include "termtokens.h"
 
 
 /* FIXME: get rid of this prototype in the correct way */
@@ -121,7 +122,7 @@ FILE  *trogue=NULL;		/* Pipe to Rogue process */
 /* Characters */
 char  logfilename[100];		/* Name of log file */
 char  afterid = '\0';           /* Letter of obj after identify */
-char  genelock[100];		/* Gene pool lock file */
+static char  genelock[100];	/* Gene pool lock file */
 char  genelog[100];		/* Genetic learning log file */
 char  genepool[100];		/* Gene pool */
 char  *genocide;		/* List of monsters to be genocided */
@@ -131,7 +132,7 @@ char  lastname[NAMSIZ];		/* Name of last potion/scroll/wand */
 char  nextid = '\0';            /* Next object to identify */
 char  screen[24][80];		/* Map of current Rogue screen */
 char  sumline[128];		/* Termination message for Rogomatic */
-char  ourkiller[NAMSIZ];		/* How we died */
+char  ourkiller[NAMSIZ];	/* How we died */
 char  versionstr[32];		/* Version of Rogue being used */
 char  *parmstr;			/* Pointer to process arguments */
 char  pending_call_letter = ' ';	/* If non-blank we have a call it to do */
@@ -168,9 +169,9 @@ int   darkturns = 0;		/* Distance to monster being arched */
 int   debugging = D_NORMAL;	/* Debugging options in effect */
 int   didreadmap = 0;		/* Last level we read a map on */
 int   doorlist[40];		/* List of doors on this level */
-int   doublehasted = 0; 	/* True if double hasted (Rogue 3.6) */
+int   doublehasted = 0;		/* True if double hasted (Rogue 3.6) */
 int   droppedscare = 0;		/* True if we dropped 'scare' on this level */
-int   diddrop = 0;	/* True if we dropped anything on this spot */
+int   diddrop = 0;		/* True if we dropped anything on this spot */
 int   emacs = 0;		/* True ==> format output for Emacs */
 int   exploredlevel = 0;	/* We completely explored this level */
 int   floating = 0;		/* True if we are levitating */
@@ -244,11 +245,10 @@ int   zonemap[9][9];		/* Map of zones connections */
 
 /* Functions */
 void (*istat)(int);
-void onintr (int sig);
 char getroguetoken (), *getname();
 
 /* Stuff list, list of objects on this level */
-stuffrec slist[MAXSTUFF]; 	int slistlen=0;
+stuffrec slist[MAXSTUFF];	int slistlen=0;
 
 /* Monster list, list of monsters on this level */
 monrec mlist[MAXMONST];		int mlistlen=0;
@@ -274,7 +274,7 @@ int k_exper =	50;	/* Level*10 on which to experiment with items */
 int k_run =	50;	/* Propensity for retreating */
 int k_wake =	50;	/* Propensity for waking things up */
 int k_food =	50;	/* Propensity for hoarding food (affects rings) */
-int knob[MAXKNOB] = {50, 50, 50, 50, 50, 50, 50, 50};
+static int knob[MAXKNOB] = {50, 50, 50, 50, 50, 50, 50, 50};	/* Knobs */
 char *knob_name[MAXKNOB] = {
   "trap searching:   ",
   "door searching:   ",
@@ -339,17 +339,21 @@ char roguename[100];
 /* Used by onintr() to restart Rgm at top of command loop */
 jmp_buf  commandtop;
 
+/* static declarations */
+static void onintr (int sig);
+static void startlesson (void);
+static void endlesson (void);
+
 /*
  * Main program
  */
 
-main (argc, argv)
-int   argc;
-char *argv[];
+int
+main (int argc, char *argv[])
 {
-  char  ch, *s, *getenv(), *statusline(), msg[128];
+  char  ch, *s, msg[128];
   int startingup = 1;
-  register int  i;
+  int  i;
 
   debuglog_open ("debuglog.player");
 
@@ -366,7 +370,7 @@ char *argv[];
   for (i = 80 * 24; i--; ) screen[0][i] = ' ';
 
   /*
-   * Get the process id of this player program if the 
+   * Get the process id of this player program if the
    * environment variable is set which requests this be
    * done.  Then create the file name with the PID so
    * that the debugging scripts can find it and use the
@@ -432,7 +436,7 @@ char *argv[];
   arglen = 0;
 
   for (i=0; i<argc; i++) {
-    register int len = strlen (argv[i]);
+    int len = strlen (argv[i]);
     arglen += len + 1;
 
     while (len >= 0) argv[i][len--] = ' ';
@@ -776,7 +780,7 @@ char *argv[];
     char lognam[128];
 
     /* Make up a new log file name */
-    sprintf (lognam, "%0.4s.%d.%d", ourkiller, MaxLevel, ourscore);
+    sprintf (lognam, "%.4s.%d.%d", ourkiller, MaxLevel, ourscore);
 
     /* Close the open file */
     toggleecho ();
@@ -802,7 +806,8 @@ char *argv[];
  * and reset some goal variables.
  */
 
-void onintr (int sig)
+static void
+onintr (int sig)
 {
   sendnow ("n\033");            /* Tell Rogue we don't want to quit */
   refresh ();                   /* Clear terminal output */
@@ -819,7 +824,8 @@ void onintr (int sig)
  * test this game, and set the parameters (or "knobs") accordingly.
  */
 
-startlesson ()
+static void
+startlesson (void)
 {
   int tmpseed = 0;
 
@@ -873,7 +879,8 @@ startlesson ()
  * evaluate the performance of this genotype and save in genepool.
  */
 
-endlesson ()
+static void
+endlesson (void)
 {
   if (geneid > 0 &&
       (stlmatch (termination, "perditus") ||

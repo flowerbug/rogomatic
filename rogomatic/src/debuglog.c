@@ -25,7 +25,9 @@
 
 #define MAXLINE 4096
 
-FILE *debug = NULL;
+/* static declarations */
+static FILE *debug = NULL;
+static void err_doit(int errnoflag, int error, const char *fmt, va_list ap);
 
 static void
 err_doit(int errnoflag, int error, const char *fmt, va_list ap)
@@ -44,17 +46,20 @@ err_doit(int errnoflag, int error, const char *fmt, va_list ap)
   }
 }
 
-void debuglog_open (const char *log)
+void
+debuglog_open (const char *log)
 {
   debug = fopen (log, "w");
 }
 
-void debuglog_close (void)
+void
+debuglog_close (void)
 {
   fclose (debug);
 }
 
-void debuglog (const char *fmt, ...)
+void
+debuglog (const char *fmt, ...)
 {
   va_list  ap;
   char buf[MAXLINE];

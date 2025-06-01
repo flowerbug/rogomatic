@@ -21,6 +21,7 @@
  */
 
 # include <stdio.h>
+# include <stdlib.h>
 
 # include "types.h"
 # include "globals.h"
@@ -31,7 +32,9 @@
 
 int number1 = 0;
 int number2 = 0;
-int number3 = 0;
+
+/* static declarations */
+static int number3 = 0;
 
 /* Last kind of message to echo file */
 static int cecho = 0;
@@ -39,7 +42,21 @@ static int cecho = 0;
 /* Game record file 'echo' option */
 static FILE  *fecho=NULL;
 
-int rogue_log_open (const char *filename)
+static void rogue_log_write_token (char ch);
+static FILE *froguelog;
+static void open_frogue_fd_debuglog (int frogue_fd_dl);
+static FILE *frogue;
+static void open_frogue (const char *file);
+static void close_frogue (void);
+static int fetchnum (char ch);
+static int match2 (char ch1, char ch2);
+static int match3 (char ch1, char ch2, char ch3);
+static int match4 (char ch1, char ch2, char ch3, char ch4);
+static int match5 (char ch1, char ch2, char ch3, char ch4, char ch5);
+static int getlogtoken(void);
+
+int
+rogue_log_open (const char *filename)
 {
   fecho = fopen (filename, "w");
 
@@ -51,7 +68,8 @@ int rogue_log_open (const char *filename)
   return (fecho != NULL);
 }
 
-void rogue_log_close ()
+void
+rogue_log_close (void)
 {
   if (cecho)
     fprintf (fecho, "\n");
@@ -62,7 +80,8 @@ void rogue_log_close ()
   fclose (fecho);
 }
 
-void rogue_log_write_command (char c)
+void
+rogue_log_write_command (char c)
 {
   if (logging) {
     if (cecho) {
@@ -77,7 +96,8 @@ void rogue_log_write_command (char c)
   }
 }
 
-void rogue_log_write_token (char ch)
+static void
+rogue_log_write_token (char ch)
 {
   /* Log the tokens */
   if (logging) {
@@ -95,7 +115,7 @@ void rogue_log_write_token (char ch)
         case CL_TOK: fprintf (fecho, "{ff}");                   break;
         case CM_TOK: fprintf (fecho, "{cm(%d,%d)}", number1, number2);  break;
         case CR_TOK: fprintf (fecho, "{cr}");                   break;
-        case ER_TOK: fprintf (fecho, "{ERRESC}", ch);           break;
+        case ER_TOK: fprintf (fecho, "{ERRESC}");               break;
         case LF_TOK: fprintf (fecho, "{lf}");                   break;
         case ND_TOK: fprintf (fecho, "{nd(%d)}", number1);      break;
         case SE_TOK: fprintf (fecho, "{se}");                   break;
@@ -124,19 +144,22 @@ void rogue_log_write_token (char ch)
 /* Debuglog for the frogue */
 static FILE *froguelog = NULL;
 
-void open_frogue_debuglog (const char *file)
+void
+open_frogue_debuglog (const char *file)
 {
   froguelog = fopen (file,"w");
 }
 
-void open_frogue_fd_debuglog (int frogue_fd_dl)
+static void
+open_frogue_fd_debuglog (int frogue_fd_dl)
 {
   froguelog = fdopen (frogue_fd_dl,"w");
 }
 
 #define PUTDEBUGCHAR(c) {if (froguelog != NULL) {fputc(c,froguelog); fflush (froguelog);}}
 
-void close_frogue_debuglog ()
+void
+close_frogue_debuglog (void)
 {
   if (froguelog != NULL)
     fclose (froguelog);
@@ -146,12 +169,14 @@ void close_frogue_debuglog ()
 /* Log from rogue */
 static FILE *frogue = NULL;
 
-void open_frogue (const char *file)
+static void
+open_frogue (const char *file)
 {
   frogue = fopen (file, "r");
 }
 
-void open_frogue_fd (int frogue_fd)
+void
+open_frogue_fd (int frogue_fd)
 {
   frogue = fdopen (frogue_fd, "r");
 }
@@ -159,7 +184,8 @@ void open_frogue_fd (int frogue_fd)
 #define GETROGUECHAR fgetc(frogue);
 #define UNGETROGUECHAR(c) ungetc(c, frogue);
 
-void close_frogue ()
+static void
+close_frogue (void)
 {
   fclose (frogue);
 }
@@ -184,7 +210,8 @@ static int matchnum (char ch)
   return 0;
 }
 
-static int fetchnum (char ch)
+static int
+fetchnum (char ch)
 {
   char ch2;
   char num[20];
@@ -212,7 +239,8 @@ static int fetchnum (char ch)
   return atoi (num);
 }
 
-static int match2 (char ch1, char ch2)
+static int
+match2 (char ch1, char ch2)
 {
   char mch1 = GETROGUECHAR;
   char mch2 = GETROGUECHAR;
@@ -229,7 +257,8 @@ static int match2 (char ch1, char ch2)
   }
 }
 
-static int match3 (char ch1, char ch2, char ch3)
+static int
+match3 (char ch1, char ch2, char ch3)
 {
   char mch1 = GETROGUECHAR;
   char mch2 = GETROGUECHAR;
@@ -249,7 +278,8 @@ static int match3 (char ch1, char ch2, char ch3)
   }
 }
 
-static int match4 (char ch1, char ch2, char ch3, char ch4)
+static int
+match4 (char ch1, char ch2, char ch3, char ch4)
 {
   char mch1 = GETROGUECHAR;
   char mch2 = GETROGUECHAR;
@@ -272,7 +302,8 @@ static int match4 (char ch1, char ch2, char ch3, char ch4)
   }
 }
 
-static int match5 (char ch1, char ch2, char ch3, char ch4, char ch5)
+static int
+match5 (char ch1, char ch2, char ch3, char ch4, char ch5)
 {
   char mch1 = GETROGUECHAR;
   char mch2 = GETROGUECHAR;
@@ -580,10 +611,10 @@ getroguetoken (void)
  * getoldcommand: retrieve the old command from a logfile we are replaying.
  */
 
-getoldcommand (s)
-register char *s;
+void
+getoldcommand (char *s)
 {
-  register int charcount = 0;
+  int charcount = 0;
   char ch = ' ', term = '"', *startpat = "\nC: ";
 
   while (*startpat && (int) ch != EOF)
@@ -606,7 +637,8 @@ register char *s;
  * Rog-O-Matic at our disposal.					LGCH.
  */
 
-int getlogtoken()
+static int
+getlogtoken(void)
 {
   int acceptline;
   int ch = GETLOGCHAR;

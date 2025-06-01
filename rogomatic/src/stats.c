@@ -48,14 +48,15 @@
 
 # include <stdio.h>
 # include <math.h>
+
 # include "types.h"
 
 /*
  * clearprob: zero a probability structure.
  */
 
-clearprob (p)
-register  probability *p;
+void
+clearprob (probability *p)
 {
   p->fail = p->win = 0;
 }
@@ -64,9 +65,8 @@ register  probability *p;
  * addprob: Add a data point to a probability
  */
 
-addprob (p, success)
-register probability *p;
-register int success;
+void
+addprob (probability *p, int success)
 {
   if (success)	p->win++;
   else		p->fail++;
@@ -76,10 +76,10 @@ register int success;
  * prob: Calculate a probability
  */
 
-double prob (p)
-register probability *p;
+double
+prob (probability *p)
 {
-  register int trials = p->fail + p->win;
+  int trials = p->fail + p->win;
 
   if (trials < 1)	return (0.0);
   else			return ((double) p->win / trials);
@@ -89,9 +89,8 @@ register probability *p;
  * parseprob: Parse a probability structure from buffer 'buf'
  */
 
-parseprob (buf, p)
-register char *buf;
-register probability *p;
+void
+parseprob (char *buf, probability *p)
 {
   p->win = p->fail = 0;
   sscanf (buf, "%d %d", &p->fail, &p->win);
@@ -101,9 +100,8 @@ register probability *p;
  * writeprob. Write the value of a probability structure to file 'f'.
  */
 
-writeprob (f, p)
-register FILE *f;
-register probability *p;
+void
+writeprob (FILE *f, probability *p)
 {
   fprintf (f, "%d %d", p->fail, p->win);
 }
@@ -112,8 +110,8 @@ register probability *p;
  * clearstat: zero a statistic structure.
  */
 
-clearstat (s)
-register  statistic * s;
+void
+clearstat (statistic *s)
 {
   s->count = 0;
   s->sum = s->sumsq = s->low = s->high = 0.0;
@@ -123,9 +121,8 @@ register  statistic * s;
  * addstat: Add a data point to a statistic
  */
 
-addstat (s, datum)
-register statistic *s;
-register int datum;
+void
+addstat (statistic *s, int datum)
 {
   double d = (double) datum;
 
@@ -142,8 +139,8 @@ register int datum;
  * mean: Return the mean of a statistic
  */
 
-double mean (s)
-register statistic *s;
+double
+mean (statistic *s)
 {
   if (s->count < 1)	return (0.0);
   else			return (s->sum / s->count);
@@ -153,10 +150,10 @@ register statistic *s;
  * stdev: Return the standard deviation of a statistic
  */
 
-double stdev (s)
-register statistic *s;
+double
+stdev (statistic *s)
 {
-  register n = s->count;
+  int n = s->count;
 
   if (n < 2)	return (0.0);
   else		return (sqrt ((n * s->sumsq - s->sum * s->sum) / (n * (n-1))));
@@ -166,9 +163,8 @@ register statistic *s;
  * parsestat: Parse a statistic structure from buffer 'buf'
  */
 
-parsestat (buf, s)
-register char *buf;
-register statistic *s;
+void
+parsestat (char *buf, statistic *s)
 {
   s->count = 0;
   s->sum = s->sumsq = s->low = s->high = 0.0;
@@ -180,9 +176,8 @@ register statistic *s;
  * writestat. Write the value of a statistic structure to file 'f'.
  */
 
-writestat (f, s)
-register FILE *f;
-register statistic *s;
+void
+writestat (FILE *f, statistic *s)
 {
   fprintf (f, "%d %lg %lg %lg %lg",
            s->count, s->sum, s->sumsq, s->low, s->high);

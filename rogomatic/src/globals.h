@@ -32,7 +32,6 @@ extern FILE *trogue;	/* From Rogue, To Rogue */
 extern FILE *logfile;		/* Rogomatic score file */
 extern FILE *realstdout;	/* Real stdout when in terse or emacs mode */
 extern FILE *snapshot;		/* File for snapshot command */
-FILE *wopen();			/* Open a file for world access */
 
 /* global characters and strings */
 extern char afterid;		/* Index of object after identify */
@@ -45,20 +44,11 @@ extern char ourkiller[];	/* What was listed on the tombstone */
 extern char *parmstr;		/* Pointer to argument space */
 extern char pending_call_letter;	/* Pack object we know a name for */
 extern char pending_call_name[];	/* Pack object name for letter */
-extern char queue[];		/* stuff to be sent to Rogue */
 extern char *roguename;		/* Name we are playing under */
 extern char screen[24][80];	/* characters drawn by Rogue */
 extern char sumline[];		/* Summation line */
 extern char *termination;	/* Latin verb for how we died */
 extern char versionstr[];	/* Version of Rogue we are playing */
-
-/* character and string functions */
-extern int getlogtoken();
-extern char *getname(), *itemstr();
-extern char logchar(), *monname(), *findentry_getfakename(), *findentry_getrealname();
-
-/* double precision floating point functions */
-double prob(), mean(), stdev();	/* For stats.c */
 
 /* global integers */
 extern int aggravated;		/* True if we aggravated this level */
@@ -66,8 +56,8 @@ extern int agoalr,agoalc;	/* where we killed a monster */
 extern int ammo;		/* Number of missiles in pack */
 extern int arglen;		/* Length of argument space */
 extern int arrowshot;		/* True if trap fired at us this round */
-extern int atrow,atcol;		/* where is the '@'? (us) */
-extern int atrow0,atcol0;	/* where was the '@' last time */
+extern int atrow, atcol;	/* where is the '@'? (us) */
+extern int atrow0, atcol0;	/* where was the '@' last time */
 extern int attempt;		/* # times have we explored this level */
 extern int badarrow;		/* True if we missed with this arrow */
 extern int beingheld;		/* True if being held by a fungus */
@@ -92,7 +82,7 @@ extern int didreadmap;		/* Last magically mapped level */
 extern int doorlist[], *newdoors; /* Holds r,c of new doors found */
 extern int doublehasted;	/* True if double hasted (3.6 only) */
 extern int droppedscare;	/* Number of scare mon. on this level */
-extern int diddrop;	/* If we've dropped anything on this spot */
+extern int diddrop;		/* If we've dropped anything on this spot */
 extern int emacs;		/* True if in emacs mode */
 extern int exploredlevel;	/* We completely explored this level */
 extern int floating;		/* True if we are levitating */
@@ -105,7 +95,7 @@ extern int goodweapon;		/* Used for two-handed sword */
 extern int gplusdam;		/* Global damage bonus */
 extern int gplushit;		/* Global hit bonus */
 extern int hasted;		/* True if hasted */
-extern int head,tail;		/* endpoints of circular queue */
+extern int head, tail;		/* endpoints of circular queue */
 extern int hitstokill;		/* Number of hits to kill last monster */
 extern int interrupted;		/* True if at commandtop from onintr() */
 extern int knowident;		/* Found an identify scroll? */
@@ -146,7 +136,7 @@ extern int room[];		/* Flags for each room */
 extern int row,col;		/* where is the cursor? */
 extern int scrmap[24][80];	/* attribute flags for squares */
 extern int slowed;		/* True if we recently slowed a monster */
-extern int stairrow,staircol;	/* Where is the staircase */
+extern int stairrow, staircol;	/* Where is the staircase */
 extern int teleported;		/* times teleported on this level */
 extern int terse;		/* True if in terse mode */
 extern int transparent;		/* True ==> user mode */
@@ -162,7 +152,7 @@ extern int zone;		/* Current zone (0 to 8) */
 extern int zonemap[9][9];	/* Connectivity map */
 
 /* Status line variables */
-extern int Level,MaxLevel,Gold,Hp,Hpmax,Str,Strmax,Ac,Exp,Explev;
+extern int Level, MaxLevel, Gold, Hp, Hpmax, Str, Strmax, Ac, Exp, Explev;
 extern char Ms[];		/* Msg 'X', 'Hungry', 'Weak', 'Fainting' */
 extern int turns;		/* Est time in Rogue turns since start */
 
@@ -199,13 +189,12 @@ extern int	ontarget, targetrow, targetcol;
 /* Monster attribute and Long term memory arrays */
 extern attrec monatt[];		/* Monster attributes */
 extern lrnrec ltm;		/* Long term memory -- general */
-extern ltmrec monhist[]; 	/* Long term memory -- creatures */
-extern ltmrec delhist[]; 	/* Long term memory -- changes this game */
+extern ltmrec monhist[];	/* Long term memory -- creatures */
+extern ltmrec delhist[];	/* Long term memory -- changes this game */
 extern int nextmon;		/* Length of LTM */
 extern int monindex[];		/* Index into monhist array */
 
 /* Genetic learning arrays */
-extern int knob[];		/* Knobs */
 extern int k_srch;		/* Propensity for searching squares */
 extern int k_door;		/* Propensity for searching doors */
 extern int k_rest;		/* Propensity for resting */

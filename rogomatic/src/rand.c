@@ -21,6 +21,8 @@
  * along with Rog-O-Matic.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+# include <time.h>
+
 /*
  * rand.c:
  *
@@ -67,10 +69,10 @@
 # define AUXLEN 97
 static int seed1=872978, seed2=518652, seed3=226543, auxtab[AUXLEN];
 
-rogo_srand (seed)
-int seed;
+void
+rogo_srand (int seed)
 {
-  register int i;
+  int i;
 
   if (seed == 0) seed = time (0);
 
@@ -83,9 +85,10 @@ int seed;
     auxtab[i] = X;
 }
 
-int rogo_rand ()
+int
+rogo_rand (void)
 {
-  register int j, result;
+  int j, result;
 
   j = AUXLEN * Y / MOD1;	/* j random from 0..AUXLEN-1 */
   result = auxtab[j];
@@ -93,10 +96,10 @@ int rogo_rand ()
   return (result);
 }
 
-rogo_randint (max)
-register int max;
+int
+rogo_randint (int max)
 {
-  register int j, result;
+  int j, result;
 
   j = AUXLEN * Y / MOD1;	/* j random from 0..AUXLEN-1 */
   result = auxtab[j];

@@ -31,6 +31,7 @@
 # include <curses.h>
 # include <ctype.h>
 # include <string.h>
+
 # include "types.h"
 # include "globals.h"
 
@@ -43,7 +44,13 @@ struct levstruct {
   long pos;
   int  level, gold, hp, hpmax, str, strmax, ac, explev, exp;
 } levpos[MAXNUMLEV];
-int numlev = 0;
+
+/* static declarations */
+static int numlev = 0;
+
+static int findlevel (FILE *f, struct levstruct *lvpos, int *nmlev, int maxnum);
+static void fillstruct (FILE *f, struct levstruct *lev);
+static int findmatch (FILE *f, char *s);
 
 /*
  * positionreplay: Called when user has typed the 'R' command, it fills
@@ -51,7 +58,8 @@ int numlev = 0;
  * the log file to the level requested by the user.
  */
 
-positionreplay ()
+void
+positionreplay (void)
 {
   int curlev;
   long curpos;
@@ -111,7 +119,7 @@ positionreplay ()
   }
 
   clearscreen ();	/* Clear the screen */
-  Level = -1; 		/* Force a newlevel() call */
+  Level = -1;		/* Force a newlevel() call */
 }
 
 /*
@@ -119,10 +127,8 @@ positionreplay ()
  *             Rog-O-Matic log file.
  */
 
-findlevel (f, lvpos, nmlev, maxnum)
-FILE *f;
-struct levstruct *lvpos;
-int *nmlev, maxnum;
+static int
+findlevel (FILE *f, struct levstruct *lvpos, int *nmlev, int maxnum)
 {
   char ch;
   int l=0;
@@ -160,9 +166,8 @@ int *nmlev, maxnum;
  * fields of a levstruct.
  */
 
-fillstruct (f, lev)
-FILE *f;
-struct levstruct *lev;
+static void
+fillstruct (FILE *f, struct levstruct *lev)
 {
   lev->level  = 0;
   lev->gold   = 0;
@@ -209,9 +214,8 @@ struct levstruct *lev;
  * Restriction: 's' must not contain prefix of itself as a substring.
  */
 
-int findmatch (f, s)
-FILE *f;
-char *s;
+static int
+findmatch (FILE *f, char *s)
 {
   char *m = s, ch;
 

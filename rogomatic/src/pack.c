@@ -29,8 +29,12 @@
 
 # include <curses.h>
 # include <string.h>
+# include <stdlib.h>
+
 # include "types.h"
 # include "globals.h"
+
+/* static declarations */
 
 static char *stuffmess [] = {
   "strange", "food", "potion", "scroll",
@@ -39,15 +43,20 @@ static char *stuffmess [] = {
   "none"
 };
 
+static void clearpack (int pos);
+static void rollpackup (int pos);
+static void rollpackdown (int pos);
+static void countpack (void);
+
 /*
  * itemstr: print the inventory message for a single item.
  */
 
-char *itemstr (i)
-register int i;
+char *
+itemstr (int i)
 {
   static char ispace[128];
-  register char *item = ispace;
+  char *item = ispace;
 
   memset (ispace, '\0', 128);
 
@@ -88,10 +97,10 @@ register int i;
  * dumpinv: print the inventory. calls itemstr.
  */
 
-dumpinv (f)
-register FILE *f;
+void
+dumpinv (FILE *f)
 {
-  register int i;
+  int i;
 
   if (f == NULL)
     at (1,0);
@@ -111,8 +120,8 @@ register FILE *f;
  * removeinv: remove an item from the inventory.
  */
 
-removeinv (pos)
-int pos;
+void
+removeinv (int pos)
 {
   if (--(inven[pos].count) == 0) {
     clearpack  (pos);		/* Assure nothing at that spot  DR UT */
@@ -133,8 +142,8 @@ int pos;
  * things can be dropped all at once.
  */
 
-deleteinv (pos)
-int pos;
+void
+deleteinv (int pos)
 {
 
   if (--(inven[pos].count) == 0 || inven[pos].type == missile) {
@@ -154,8 +163,8 @@ int pos;
  * clearpack: zero out slot in pack.  DR UTexas 01/05/84
  */
 
-clearpack (pos)
-int pos;
+static void
+clearpack (int pos)
 {
   if (pos >= MAXINV) return;
 
@@ -180,11 +189,11 @@ int pos;
  * the pack.
  */
 
-rollpackup (pos)
-register int pos;
+static void
+rollpackup (int pos)
 {
-  register char *savebuf;
-  register int i;
+  char *savebuf;
+  int i;
 
   if (version >= RV53A) return;
 
@@ -215,11 +224,11 @@ register int pos;
  * objects behind that position.
  */
 
-rollpackdown (pos)
-register int pos;
+static void
+rollpackdown (int pos)
 {
-  register char *savebuf;
-  register int i;
+  char *savebuf;
+  int i;
 
   if (version >= RV53A) {
     return;
@@ -251,7 +260,8 @@ register int pos;
  * doresetinv.
  */
 
-resetinv()
+void
+resetinv(void)
 {
   if (!replaying) {
     command (T_OTHER, "i");
@@ -270,7 +280,8 @@ resetinv()
  * doresetinv: reset the inventory.  DR UTexas 01/05/84
  */
 
-doresetinv ()
+void
+doresetinv (void)
 {
   int i;
   static char space[MAXINV][80];
@@ -295,10 +306,10 @@ doresetinv ()
 
 # define xtr(w,b,e,k) {what=(w);xbeg=mess+(b);xend=mend-(e);xknow|=(k);}
 
-inventory (msgstart, msgend)
-char *msgstart, *msgend;
+int
+inventory (char *msgstart, char *msgend)
 {
-  register char *p, *q, *mess = msgstart, *mend = msgend;
+  char *p, *q, *mess = msgstart, *mend = msgend;
   char objname[100];
   char dbname[NAMSIZ];
   char codename[NAMSIZ];
@@ -482,7 +493,7 @@ char *msgstart, *msgend;
   dwait (D_PACK, "inv    ht %d dm %d ch %d kn %d",
          plushit, plusdam, charges, xknow);
 
-  /* make sure all unknown potion, Scroll, wand, rings 
+  /* make sure all unknown potion, Scroll, wand, rings
      are in dbase */
   if (!xknow && (what == potion || what == Scroll || what == wand || what == ring)) {
     addobj (objname, ipos, what);
@@ -636,9 +647,10 @@ char *msgstart, *msgend;
  * countpack: Count objects, missiles, and food in the pack.
  */
 
-countpack ()
+static void
+countpack (void)
 {
-  register int i, cnt;
+  int i, cnt;
 
   for (objcount=0, larder=0, ammo=0, i=0; i<invcount; i++) {
     if (! (cnt = inven[i].count))	; /* No object here */

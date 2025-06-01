@@ -29,6 +29,7 @@
  */
 
 # include <curses.h>
+
 # include "types.h"
 # include "globals.h"
 
@@ -39,10 +40,12 @@
 		(timestosearch - k_door / 5 + 5)) :		\
 	    timestosearch)
 
+/* static declarations */
+
 static int expDor, expavoidval;
 static int avdmonsters[24][80];
 
-int rogo_connect[9][4] = {
+static int rogo_connect[9][4] = {
   /* Room  top    bot   left  right*/
   /* 0 */  {-1,     3,    -1,     1},
   /* 1 */  {-1,     4,     0,     2},
@@ -55,11 +58,36 @@ int rogo_connect[9][4] = {
   /* 8 */  { 5,    -1,     7,    -1}
 };
 
+static int gotoinit (void);
+static int gotovalue (int r, int c, int depth __attribute__ ((__unused__)),
+		      int *val, int *avd, int *cont __attribute__ ((__unused__)));
+static int wallkind (int r, int c);
+static int expinit (void);
+static int roominit (void);
+static int expvalue (int r, int c, int depth __attribute__ ((__unused__)),
+		     int *val, int *avd, int *cont);
+static int zigzagvalue (int r, int c, int depth __attribute__ ((__unused__)), int *val, int *avd, int *cont);
+static int secretinit (void);
+static int secretvalue (int r, int c, int depth __attribute__ ((__unused__)), int *val, int *avd, int *cont);
+static void avoidmonsters (void);
+static void caddycorner (int r, int c, int d1, int d2, char ch);
+static void pinavoid (void);
+static int safevalue (int r, int c, int depth __attribute__ ((__unused__)), int *val, int *avd, int *cont);
+static int avoid (void);
+static int archeryinit (void);
+static int archeryvalue (int r, int c, int depth __attribute__ ((__unused__)), int *val, int *avd, int *cont);
+static int restinlight;			/* True only in lit rooms */
+static int restinroom;			/* True only in a room */
+static int restr, restc;		/* Square to rest on */
+static int restinit (void);
+static int restvalue (int r, int c, int depth __attribute__ ((__unused__)), int *val, int *avd, int *cont);
+
 /*
  * genericinit: Initialize a 'standard' movement search.	MLM
  */
 
-genericinit ()
+int
+genericinit (void)
 {
   expavoidval = avoid();
   return (1);
@@ -69,7 +97,7 @@ genericinit ()
  *
  *  Number of unsearched walls adjacent.
  *
- * 	Vert	Horiz	Value		Cont	Explanation
+ *	Vert	Horiz	Value		Cont	Explanation
  *	---------------------------------------------------
  *	0	0	0		0	Valueless
  *	0	1	N-24-dep	16	Prefer (0,2) 1 move later
@@ -106,13 +134,11 @@ static int secretcont[16] =  { 0, 16, 15, 14,
  * gotowards: Move toward a square.
  */
 
-int gotorow = NONE, gotocol = NONE;
+static int gotorow = NONE, gotocol = NONE;
 
-gotowards (r, c, running)
-int r, c, running;
+int
+gotowards (int r, int c, int running)
 {
-  int gotoinit(), gotovalue();
-
   gotorow = r; gotocol = c;
   return (makemove (running ? RUNAWAY:GOTOMOVE, gotoinit, gotovalue, REUSE));
 }
@@ -121,7 +147,8 @@ int r, c, running;
  * gotoinit: Initialize a gotowards move.
  */
 
-gotoinit ()
+static int
+gotoinit (void)
 {
   expavoidval = avoid();
   return (1);
@@ -131,9 +158,9 @@ gotoinit ()
  * gotovalue: Only the current target square has a value.
  */
 
-/* ARGSUSED */
-gotovalue (r, c, depth, val, avd, cont)
-int r, c, depth, *val, *avd, *cont;
+static int
+gotovalue (int r, int c, int depth __attribute__ ((__unused__)),
+	   int *val, int *avd, int *cont __attribute__ ((__unused__)))
 {
   *avd = onrc (SAFE, r, c)    ? 0 :
          onrc (ARROW, r, c)   ? 50 :
@@ -159,9 +186,9 @@ int r, c, depth, *val, *avd, *cont;
  *             Use genericinit.		MLM
  */
 
-/* ARGSUSED */
-sleepvalue (r, c, depth, val, avd, cont)
-int r, c, depth, *val, *avd, *cont;
+int
+sleepvalue (int r, int c, int depth __attribute__ ((__unused__)),
+	    int *val, int *avd, int *cont __attribute__ ((__unused__)))
 {
   *avd = onrc (SAFE, r, c)    ? 0 :
          onrc (ARROW, r, c)   ? 50 :
@@ -191,8 +218,8 @@ int r, c, depth, *val, *avd, *cont;
  *           is there. Part of doorinit   Guy Jacobson 5/82
  */
 
-int wallkind (r, c)
-int r, c;
+static int
+wallkind (int r, int c)
 {
   switch (screen[r][c]) {
 
@@ -217,9 +244,10 @@ int r, c;
  * Modified to understand maze room secret doors.		MLM.   10/83
  */
 
-setpsd (print)
+int
+setpsd (int print)
 {
-  register int i, j, k, whereto, numberpsd=0;
+  int i, j, k, whereto, numberpsd=0;
 
   if (!print && reusepsd > 0) return (reusepsd-1);
 
@@ -278,7 +306,7 @@ setpsd (print)
 
       else {
         if ((k = wallkind (i,j)) >= 0) {	/* A legit sort of wall */
-          register int rm = whichroom (i,j);
+          int rm = whichroom (i,j);
 
           if (rm >= 0 && rm < 9) {
             whereto = rogo_connect[rm][k];
@@ -323,9 +351,8 @@ setpsd (print)
  * downvalue: find nearest stairs or trapdoor (use genericinit for init).
  */
 
-/* ARGSUSED */
-downvalue (r, c, depth, val, avd, cont)
-int r, c, depth, *val, *avd, *cont;
+int
+downvalue (int r, int c, int depth __attribute__ ((__unused__)), int *val, int *avd, int *cont __attribute__ ((__unused__)))
 {
   *avd = onrc (SAFE, r, c)    ? 0 :
          onrc (ARROW, r, c)   ? 50 :
@@ -348,7 +375,8 @@ int r, c, depth, *val, *avd, *cont;
  * expruninit: same as expinit but don't bias against doors.
  */
 
-expruninit ()
+int
+expruninit (void)
 {
   dwait (D_CONTROL | D_SEARCH, "expruninit called.");
   expinit();
@@ -363,8 +391,8 @@ expruninit ()
  * Try to see a new square when running.
  */
 
-exprunvalue (r, c, depth, val, avd, cont)
-int r, c, depth, *val, *avd, *cont;
+int
+exprunvalue (int r, int c, int depth, int *val, int *avd, int *cont)
 {
   if (r == atrow && c == atcol)		/* Current square useless MLM */
     *val = 0;
@@ -383,7 +411,8 @@ int r, c, depth, *val, *avd, *cont;
  * expunpininit: same as exprunnit but try to unpin.
  */
 
-expunpininit ()
+int
+expunpininit (void)
 {
   dwait (D_CONTROL | D_SEARCH, "expunpininit called.");
   expinit();
@@ -398,8 +427,8 @@ expunpininit ()
  * Try to see a new square when unpinning, but unpin anywhere if need be.
  */
 
-expunpinvalue (r, c, depth, val, avd, cont)
-int r, c, depth, *val, *avd, *cont;
+int
+expunpinvalue (int r, int c, int depth, int *val, int *avd, int *cont)
 {
   if (r == atrow && c == atcol)		/* Current square useless MLM */
     *val = 0;
@@ -418,7 +447,8 @@ int r, c, depth, *val, *avd, *cont;
  * runinit:  R U N   A W A Y   S E A R C H
  */
 
-runinit ()
+int
+runinit (void)
 {
   avoidmonsters();
   return (1);
@@ -438,8 +468,8 @@ runinit ()
  * Gave GasTraps and BearTraps infinite avoidance.	MLM 10/11/83
  */
 
-runvalue (r, c, depth, val, avd, cont)
-int r, c, depth, *val, *avd, *cont;
+int
+runvalue (int r, int c, int depth, int *val, int *avd, int *cont)
 {
   *avd = onrc (ARROW, r, c) ? 50 :
          onrc (TRAPDOR, r, c) ? 0 :
@@ -477,6 +507,7 @@ int r, c, depth, *val, *avd, *cont;
     { *val = 0; }
 
   *avd += avdmonsters[r][c];
+  return (1);
 }
 
 /*
@@ -485,7 +516,8 @@ int r, c, depth, *val, *avd, *cont;
  * Same as runint, but we are willing to take one hit to get away.
  */
 
-unpininit ()
+int
+unpininit (void)
 {
   pinavoid();
   return (1);
@@ -495,7 +527,8 @@ unpininit ()
  * rundoorinit: Standard initialization routine.
  */
 
-rundoorinit()
+int
+rundoorinit (void)
 {
   avoidmonsters();
   return (1);
@@ -515,10 +548,8 @@ rundoorinit()
  * Gave GasTraps and BearTraps infinite avoidance.	MLM 10/11/83
  */
 
-/* ARGSUSED */
-rundoorvalue (r, c, depth, val, avd, cont)
-int r, c, depth;
-int *val, *avd, *cont;
+int
+rundoorvalue (int r, int c, int depth , int *val, int *avd, int *cont)
 {
   *avd = onrc (ARROW, r, c) ? 50 :
          onrc (TRAPDOR, r, c) ? 0 :
@@ -537,13 +568,15 @@ int *val, *avd, *cont;
   else				{ *val = 0;}
 
   *avd += avdmonsters[r][c];
+  return (1);
 }
 
 /*
  *   E X P L O R A T I O N   S E A R C H
  */
 
-expinit ()
+static int
+expinit (void)
 {
   /* avoidance values for doors */
   expDor = 0;
@@ -551,7 +584,8 @@ expinit ()
   return (1);
 }
 
-roominit ()
+static int
+roominit (void)
 {
   expinit ();
   expDor = ROGINFINITY;
@@ -574,12 +608,10 @@ roominit ()
  *      bbbbbbbbb
  */
 
-/* ARGSUSED */
-expvalue (r, c, depth, val, avd, cont)
-int r, c, depth;
-int *val, *avd, *cont;
+static int
+expvalue (int r, int c, int depth __attribute__ ((__unused__)), int *val, int *avd, int *cont)
 {
-  register int k, nr, nc, l;
+  int k, nr, nc, l;
   int a, v = 0, nunseenb = 0, nseenb = 0, nearb = 0;
 
   a = onrc (SAFE|DOOR|STAIRS|HALL, r, c) ? 0 :
@@ -620,7 +652,7 @@ int *val, *avd, *cont;
         else {
           /* Check for unseen boundary horiz/vert       */
           /* adjacent to neighbour and not a neighbour. */
-          l = k / 2 * 2; 		     /* horizontal/vertical */
+          l = k / 2 * 2;		     /* horizontal/vertical */
 
           if (onrc (BOUNDARY+SEEN, nr+deltr[l], nc+deltc[l]) == BOUNDARY)
             nearb = 1;
@@ -663,7 +695,7 @@ int *val, *avd, *cont;
   *val = v;
 
   if (v < 50)
-    *cont = 4; 				     /* Look for something better */
+    *cont = 4;				     /* Look for something better */
 
   if (debug (D_SCREEN) && v > 0)
     { mvaddch (r, c, 'o'); dwait (D_SCREEN, "Value %d", v); }
@@ -683,12 +715,10 @@ int *val, *avd, *cont;
  * Gave GasTraps and BearTraps infinite avoidance.	MLM 10/11/83
  */
 
-/* ARGSUSED */
-zigzagvalue (r, c, depth, val, avd, cont)
-int r, c, depth;
-int *val, *avd, *cont;
+static int
+zigzagvalue (int r, int c, int depth __attribute__ ((__unused__)), int *val, int *avd, int *cont)
 {
-  register int k, nr, nc, a, v = 0, nunseenb = 0;
+  int k, nr, nc, a, v = 0, nunseenb = 0;
 
   a = onrc (SAFE|DOOR|STAIRS|HALL, r, c) ? 0 :
       onrc (ARROW, r, c)   ? 50 :
@@ -735,7 +765,7 @@ int *val, *avd, *cont;
 
   *avd = a;
   *val = v;
-  *cont = 0; 				     /* Look for orphans */
+  *cont = 0;				     /* Look for orphans */
 
   return (1);
 }
@@ -744,7 +774,8 @@ int *val, *avd, *cont;
  *   S E C R E T   D O O R   S E A R C H
  */
 
-secretinit ()
+static int
+secretinit (void)
 {
   expinit ();
 
@@ -754,12 +785,10 @@ secretinit ()
   return (0);
 }
 
-/* ARGSUSED */
-secretvalue (r, c, depth, val, avd, cont)
-int r, c, depth;
-int *val, *avd, *cont;
+static int
+secretvalue (int r, int c, int depth __attribute__ ((__unused__)), int *val, int *avd, int *cont)
 {
-  register int v, a, k;
+  int v, a, k;
 
   *val=0;
   v = 0;	/* establish value of square */
@@ -778,8 +807,8 @@ int *val, *avd, *cont;
     a += 200;
 
   for (k=0; k<8; k++) {  /* examine adjacent squares */
-    register int nr = r + deltr[k];
-    register int nc = c + deltc[k];
+    int nr = r + deltr[k];
+    int nc = c + deltc[k];
 
     if (nr >= 1 && nr <= 22 &&
         nc >= 0 && nc <= 80 &&
@@ -821,9 +850,10 @@ int *val, *avd, *cont;
   { avdmonsters[r][c] = ROGINFINITY; \
     if (debug (D_SCREEN)) { at((r),(c)); addch(ch); at(row,col); }}
 
-avoidmonsters ()
+static void
+avoidmonsters (void)
 {
-  register int i, r, c, wearingstealth;
+  int i, r, c, wearingstealth;
 
   /* Clear old avoid monster values */
   for (i = 24*80; i--; ) avdmonsters[0][i] = 0;
@@ -878,9 +908,8 @@ avoidmonsters ()
  * them for avoidance
  */
 
-caddycorner (r, c, d1, d2, ch)
-int r,c,d1,d2;
-char ch;
+static void
+caddycorner (int r, int c, int d1, int d2, char ch)
 {
   while (onrc (CANGO, r, c)) {
     AVOID (r, c, ch);
@@ -902,9 +931,10 @@ char ch;
  * we are pinned, but could get free if we had an extra turn.   MLM
  */
 
-pinavoid ()
+static void
+pinavoid (void)
 {
-  register int i;
+  int i;
 
   /* Clear old avoid monster values */
   for (i = 24*80; i--; ) avdmonsters[0][i] = 0;
@@ -912,7 +942,7 @@ pinavoid ()
   /* Avoid each monster in turn */
   for (i=0; i<mlistlen; i++) {
     if (mlist[i].q == AWAKE) {
-      register int d, dr, dc, mr = mlist[i].mrow, mc = mlist[i].mcol;
+      int d, dr, dc, mr = mlist[i].mrow, mc = mlist[i].mcol;
       d = direc (searchstartr-mr,searchstartc-mc);
       dr = (searchstartr-mr)/2+mr - deltr[d];		/* MLM */
       dc=(searchstartc-mc)/2+mc - deltc[d];		/* MLM */
@@ -939,10 +969,9 @@ pinavoid ()
  *   S E C R E T : Search dead ends for secret doors.
  */
 
-secret ()
+int
+secret (void)
 {
-  int secretinit(), secretvalue();
-
   /* Secret passage adjacent to door? */
   if (version >= RV53A && on (DOOR) && !blinded &&
       (seerc (' ',atrow+1,atcol) || seerc (' ',atrow-1,atcol) ||
@@ -993,10 +1022,9 @@ secret ()
  *   F I N D R O O M :  Try to find another room.
  */
 
-findroom ()
+int
+findroom (void)
 {
-  int expinit(), expvalue();    /* LGCH */
-
   if (new_findroom) {
     if (!on (ROOM) && secret ())			return (1);
 
@@ -1012,10 +1040,9 @@ findroom ()
  *   E X P L O R E   R O O M :  Explore the current room.
  */
 
-exploreroom ()
+int
+exploreroom (void)
 {
-  int roominit(), expvalue();    /* LGCH */
-
   if (!on (ROOM) || isexplored (atrow, atcol)) return (0);
 
   if (makemove (EXPLOREROOM, roominit, expvalue, REUSE)) return (1);
@@ -1030,10 +1057,10 @@ exploreroom ()
  *   D O O R E X P L O R E : look for secret doors
  */
 
-doorexplore()
+int
+doorexplore(void)
 {
-  static searchcount = 0;
-  int secretinit(), secretvalue();
+  static int searchcount = 0;
 
   /* If no new squares or read map, dont bother */
   if (! new_search || Level == didreadmap)
@@ -1058,13 +1085,13 @@ doorexplore()
 }
 
 /*
- *   S A F E   S Q U A R E   S E A R C H 	Use genericinit.
+ *   S A F E   S Q U A R E   S E A R C H	Use genericinit.
  */
 
-safevalue (r, c, depth, val, avd, cont)
-int r, c, depth, *val, *avd, *cont;
+static int
+safevalue (int r, int c, int depth __attribute__ ((__unused__)), int *val, int *avd, int *cont)
 {
-  register int k, v;
+  int k, v;
 
   *avd = onrc (SAFE, r, c)    ? 0 :
          onrc (TRAPDOR | BEARTRP | GASTRAP, r, c) ? ROGINFINITY :
@@ -1096,14 +1123,16 @@ int r, c, depth, *val, *avd, *cont;
 
 /* findsafe: find a spot with 2 or fewer moves, for when blinded */
 
-findsafe()
+int
+findsafe(void)
 {
   return (makemove (FINDSAFE, genericinit, safevalue, REEVAL));
 }
 
 /* How scared are we of hitting a trap? */
 
-avoid ()
+static int
+avoid (void)
 {
   if (cheat && !foundarrowtrap && !usingarrow) return (0);
   else if (Level < 5) return (0);       /* Don't bother */
@@ -1118,12 +1147,12 @@ avoid ()
 
 static int archrow = NONE, archcol = NONE, archturns = NONE, archval[24][80];
 
-archmonster (m, trns)
-register int m;		/* Monster to attack */
-register int trns;	/* Minimum number of arrows to make it worthwhile */
+/* m - Monster to attack */
+/* trns - Minimum number of arrows to make it worthwhile */
+int
+archmonster (int m, int trns)
 {
-  int archeryinit(), archeryvalue();
-  register int mr, mc;
+  int mr, mc;
 
   dwait (D_CONTROL | D_BATTLE, "archmonster: m=%d, turns=%d", m, trns);
 
@@ -1171,9 +1200,10 @@ register int trns;	/* Minimum number of arrows to make it worthwhile */
  * waking our potential victim up.
  */
 
-archeryinit ()
+static int
+archeryinit (void)
 {
-  register int dir, r, c, dr, dc, dist;
+  int dir, r, c, dr, dc, dist;
 
   /* Clear the archery value array */
   for (r = 24*80; r--; ) archval[0][r] = 0;
@@ -1203,9 +1233,8 @@ archeryinit ()
  * number of shots we can fire.
  */
 
-/* ARGSUSED */
-archeryvalue (r, c, depth, val, avd, cont)
-int r, c, depth, *val, *avd, *cont;
+static int
+archeryvalue (int r, int c, int depth __attribute__ ((__unused__)), int *val, int *avd, int *cont)
 {
   *avd = (onrc (SAFE, r, c)	? 0 :
           onrc (TRAPDOR, r, c)	? ROGINFINITY :
@@ -1232,21 +1261,21 @@ int r, c, depth, *val, *avd, *cont;
  *   M O V E   T O   R E S T :  Find a safe square to rest up on.
  */
 
-static restinlight = 0;			/* True only in lit rooms */
-static restinroom = 0;			/* True only in a room */
-static restr = NONE, restc = NONE;	/* Square to rest on */
+static int restinlight = 0;			/* True only in lit rooms */
+static int restinroom = 0;			/* True only in a room */
+static int restr = NONE, restc = NONE;		/* Square to rest on */
 
 /* Set new resting goal */
-unrest ()
+void
+unrest (void)
 {
   restr = restc = NONE;
 }
 
 /* Move to a good square to rest up on */
-movetorest ()
+int
+movetorest (void)
 {
-  int restinit(), restvalue();    /* LGCH */
-
   if (markcycles (NOPRINT))
     unrest ();
 
@@ -1268,7 +1297,8 @@ movetorest ()
   return (0);
 }
 
-restinit ()
+static int
+restinit (void)
 {
   expavoidval = avoid();
   restinlight = (on (ROOM) && !darkroom ());
@@ -1276,12 +1306,10 @@ restinit ()
   return (1);
 }
 
-/* ARGSUSED */
-restvalue (r, c, depth, val, avd, cont)
-register int r, c;
-int depth, *val, *avd, *cont;
+static int
+restvalue (int r, int c, int depth __attribute__ ((__unused__)), int *val, int *avd, int *cont)
 {
-  register int dr, dc, ar, ac;
+  int dr, dc, ar, ac;
   int count, dir, rm;
 
   /* Find room number for diagonal selection */
