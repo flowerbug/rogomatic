@@ -1,9 +1,9 @@
 # Rogomatic
 
-  A version of Rog-O-Matic that runs in combination with a specific version of Rogue.
+  A version of Rog-O-Matic that runs in combination with a specific version of Rogue (see below).  It probably will not work very well with any other versions of Rogue without modifications (having done it once I'm not planning on doing it again).
 
 
-  The rogue code is located at:
+  The specific rogue code is located at:
 
   https://github.com/flowerbug/rogue-54-for-rogomatic
 
@@ -13,12 +13,10 @@
   http://www.anthive.com/project/rogue/
 
 
-  There are also some bash scripts that I use for debugging and a definition for the vt100 terminal to get around an issue I discovered.
-
-  
+  There are also some bash scripts and other code that I use for debugging.
 
 
-  The NEWS file contains information about how to install and what is required to run this version of rogomatic and the version of rogue that I use for testing.
+  The NEWS file contains information about how to install and what is required to run this version of rogomatic and the version of rogue that I use for testing.Yes, it is picky for me to do this but at least then I can replicate runs to make sure bugs are fixed.
 
 
 # The History of This Code

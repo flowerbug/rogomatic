@@ -1,4 +1,12 @@
-Fri Mar 23 10:09:51 EDT 2018
+Sun Feb  8 02:15:47 PM EST 2026
+
+
+    [r3.0.0]
+
+    - many edits supplied by Landon Curt Noll (lcn2) to bring the
+      code to more modern C standards, Thank you so much for this!
+
+    - remove archives directory and move the code up one directory.
 
 
     [r2.0.3]
